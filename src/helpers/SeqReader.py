@@ -16,7 +16,7 @@ class SeqReader(BaseReader):
         self.user_his: store user history sequence [(i1,t1), (i1,t2), ...]
         add the 'position' of each interaction in user_his to data_df
         """
-        logging.info('Appending history info...')
+        logging.info('添加用户历史信息中...')
         # 按照time 和 user_id进行升序排序，排序方式用归并排序
         # 可以使用快速排序、归并排序与堆排序
         # 鉴于归并的时间复杂度很稳定，所以选择归并排序：mergesort
