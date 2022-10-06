@@ -1,13 +1,13 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import logging
 import numpy as np
-
+from tqdm import tqdm
+import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import Dataset as BaseDataset
 from torch.nn.utils.rnn import pad_sequence
-from tqdm import tqdm
 from typing import List
+
 from utils import utils
 from helpers.BaseReader import BaseReader
 from helpers.SeqReader import SeqReader
@@ -22,7 +22,7 @@ class BaseModel(nn.Module):
     def parse_model_args(parser):
         parser.add_argument('--model_path', type=str, default='',
                             help='Model save path.')
-        parser.add_argument('buffer', type=int, default=1,
+        parser.add_argument('--buffer', type=int, default=1,
                             help='Whether to buffer feed dicts for dev/test')
         return parser
 
@@ -40,7 +40,7 @@ class BaseModel(nn.Module):
             nn.init.normal_(m.weight, mean=0.0, std=0.01)
 
     def __init__(self, args, corpus: BaseReader):
-        super(BaseReader, self).__init__()
+        super(BaseModel, self).__init__()
         self.device = args.device
         self.model_path = args.model_path
         self.buffer = args.buffer
@@ -84,7 +84,7 @@ class BaseModel(nn.Module):
             model_path = self.model_path
         utils.check_dir(model_path)
         torch.save(self.state_dict(), model_path)
-        logging.info('Save model to ' + model_path[:50] + '...')
+        # logging.info('Save model to ' + model_path[:50] + '...')
 
     def load_model(self, model_path=None):
         if model_path is None:
@@ -197,7 +197,7 @@ class GeneralModel(BaseModel):
         return loss
 
     class Dataset(BaseModel.Dataset):
-        def _get_feed_dict(self, index: int) -> dict:
+        def _get_feed_dict(self, index):
             user_id, target_item = self.data['user_id'][index], self.data['item_id'][index]
             if self.phase != 'train' and self.model.test_all:
                 neg_items = np.arange(1, self.corpus.n_items)

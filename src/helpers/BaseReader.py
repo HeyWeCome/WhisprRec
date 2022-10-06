@@ -1,16 +1,16 @@
+import os
+import pickle
 import argparse
 import logging
-
 import numpy as np
 import pandas as pd
-import os
 
 from utils import utils
 
 
 class BaseReader(object):
     @staticmethod
-    def parse_data_args(self, parser):
+    def parse_data_args(parser):
         parser.add_argument('--path', type=str, default='../data/', help='Input data dir.')
         parser.add_argument('--dataset', type=str, default='Food', help='Choose a dataset.')
         parser.add_argument('--sep', type=str, default='\t', help='sep of csv file.')
@@ -21,6 +21,19 @@ class BaseReader(object):
         self.prefix = args.path
         self.dataset = args.dataset
         self._read_data()
+
+        self.train_clicked_set = dict()  # store the clicked item set of each user in training set
+        self.residual_clicked_set = dict()  # store the residual clicked item set of each user
+        for key in ['train', 'dev', 'test']:
+            df = self.data_df[key]
+            for uid, iid in zip(df['user_id'], df['item_id']):
+                if uid not in self.train_clicked_set:
+                    self.train_clicked_set[uid] = set()
+                    self.residual_clicked_set[uid] = set()
+                if key == 'train':
+                    self.train_clicked_set[uid].add(iid)
+                else:
+                    self.residual_clicked_set[uid].add(iid)
 
     # 读取数据 read data
     def _read_data(self):

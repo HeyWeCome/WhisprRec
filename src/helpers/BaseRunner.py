@@ -205,7 +205,8 @@ class BaseRunner(object):
                         batch_size=self.eval_batch_size,
                         shuffle=False,
                         num_workers=self.num_workers,
-                        collate_fn=dataset.collate_batch, pin_memory=self.pin_memory)
+                        collate_fn=dataset.collate_batch,
+                        pin_memory=self.pin_memory)
         for batch in tqdm(dl, leave=False, ncols=100, mininterval=1, desc='Predict'):
             prediction = dataset.model(utils.batch_to_gpu(batch, dataset.model.device))['prediction']
             predictions.extend(prediction.cpu().data.numpy())
