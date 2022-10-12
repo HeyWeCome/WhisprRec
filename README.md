@@ -3,7 +3,7 @@ RecZoo is a collection of deep learning applications in recommendation algorithm
 It mainly collects the mainstream recommendation models and our team's research results in recommendation systems.
 The framework uses pytorch.
 
-## Get Started
+## Get Started :snail:
 1. You have to install and configure the following environment: (My environment)
 - Python >= 3.8
 - Pytorch = 1.9.0
@@ -26,5 +26,5 @@ cd RecZoo/src
 python main.py --model_name BPRMF --emb_size 64 --lr 1e-3 --l2 1e-6 --dataset Food
 ```
 
-## The Current Model List
+## The Current Model List :owl:
 todo
