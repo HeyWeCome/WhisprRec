@@ -225,8 +225,8 @@ class GeneralModel(BaseModel):
 
 # 序列模型的Model
 class SequentialModel(GeneralModel):
-    # reader = 'BaseReader'
-    reader = 'SeqReader'
+    reader = 'BaseReader'
+    # reader = 'SeqReader'
 
     @staticmethod
     def parse_model_args(parser):
