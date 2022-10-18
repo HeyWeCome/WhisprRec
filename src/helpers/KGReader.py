@@ -36,7 +36,7 @@ class KGReader(SeqReader):
 
         # 以r开头的，为数据集中存在的关系
         self.item_relations = [r for r in self.item_meta_df.columns if r.startswith('r_')]
-        for idx in trange(len(self.item_meta_df), desc='构建物品关系中:'):
+        for idx in trange(len(self.item_meta_df), desc='构建物品关系中'):
             head_item = self.item_meta_df['item_id'].values[idx]
             for r_idx, r in enumerate(self.item_relations):
                 for tail_item in self.item_meta_df[r].values[idx]:
@@ -51,7 +51,7 @@ class KGReader(SeqReader):
         if self.include_attr:
             self.attr_relations = [r for r in self.item_meta_df.columns if r.startswith('i_')]
             self.attr_max, self.share_attr_dict = list(), dict()
-            for r_idx, attr in tqdm(enumerate(self.attr_relations), desc='构建属性关系中:'):
+            for r_idx, attr in tqdm(enumerate(self.attr_relations), desc='构建属性关系中'):
                 base = self.n_items + np.sum(self.attr_max)  # base index of attribute entities
                 relation_idx = len(self.item_relations) + r_idx + 1  # index of the relation type
                 for item, val in zip(self.item_meta_df['item_id'], self.item_meta_df[attr]):
