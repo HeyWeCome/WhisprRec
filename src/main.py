@@ -7,13 +7,15 @@ import pandas as pd
 import torch
 
 from helpers import *
+from models.developing import *
+from models.graph import *
 from models.general import *
 from models.sequential import *
 from utils import utils
 
 
 def parse_global_args(parser):
-    parser.add_argument('--gpu', type=str, default='',
+    parser.add_argument('--gpu', type=str, default='cuda',
                         help='Set CUDA_VISIBLE_DEVICES, default for CPU only')
     parser.add_argument('--verbose', type=int, default=logging.INFO,
                         help='Logging Level, 0, 10, ..., 50')
@@ -67,14 +69,14 @@ def main():
         data_dict[phase] = model_name.Dataset(model, corpus, phase)
         data_dict[phase].prepare()
     runner = runner_name(args)
-    logging.info('Test Before Training: ' + runner.print_res(data_dict['test']))
+    # logging.info('Test Before Training: ' + runner.print_res(data_dict['test']))
     if args.load > 0:
         model.load_model()
     if args.train > 0:
         runner.train(data_dict)
     eval_res = runner.print_res(data_dict['test'])
     logging.info(os.linesep + 'Test After Training: ' + eval_res)
-    save_rec_results(data_dict['dev'], runner, 100)
+    # save_rec_results(data_dict['dev'], runner, 100)
     model.actions_after_train()
     logging.info(os.linesep + '-' * 45 + ' END: ' + utils.get_time() + ' ' + '-' * 45)
 
@@ -98,7 +100,7 @@ def save_rec_results(dataset, runner, topk):
 
 if __name__ == '__main__':
     init_parser = argparse.ArgumentParser(description='Model')
-    init_parser.add_argument('--model_name', type=str, default='POP', help='Choose a model to run.')
+    init_parser.add_argument('--model_name', type=str, default='SLRCPlus', help='Choose a model to run.')
     init_args, init_extras = init_parser.parse_known_args()
     model_name = eval('{0}.{0}'.format(init_args.model_name))
     reader_name = eval('{0}.{0}'.format(model_name.reader))  # model chooses the reader
