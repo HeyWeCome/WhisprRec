@@ -130,3 +130,7 @@ dmypy.json
 
 # idea
 .idea
+log/
+model/
+*.pkl
+RecBole/
