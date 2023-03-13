@@ -53,8 +53,9 @@ class BaseRunner(object):
         :return: a result dict, the keys are metric@topk
         """
         evaluations = dict()
+        # The sort_idx contains the index values of the array values in descending order.
         sort_idx = (-predictions).argsort(axis=1)
-        gt_rank = np.argwhere(sort_idx == 0)[:, 1] + 1
+        gt_rank = np.argwhere(sort_idx == 0)[:, 1] + 1  # find the rank info of ground_truth
         for k in topk:
             hit = (gt_rank <= k)
             for metric in metrics:
