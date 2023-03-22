@@ -50,7 +50,6 @@ class BaseModel(nn.Module):
     """
     核心操作:每个模型自己定义
     """
-
     def _define_params(self):
         pass
 
@@ -67,7 +66,6 @@ class BaseModel(nn.Module):
     """
     辅助操作
     """
-
     def customize_parameters(self) -> list:
         # customize optimizer settings for different parameters
         weight_p, bias_p = [], []
@@ -102,7 +100,6 @@ class BaseModel(nn.Module):
     """
     定义数据集类
     """
-
     class Dataset(BaseDataset):
         def __init__(self, model, corpus, phase: str):
             self.model = model  # 模型
@@ -188,7 +185,7 @@ class GeneralModel(BaseModel):
         :return:
         """
         predictions = out_dict['prediction']
-        pos_pred, neg_pred = predictions[:, 0], predictions[:, 1:]
+        pos_pred, neg_pred = predictions[:, 0], predictions[:, 1:]  # (256,) (256,1)
         neg_softmax = (neg_pred - neg_pred.max()).softmax(dim=1)
         loss = -((pos_pred[:, None] - neg_pred).sigmoid() * neg_softmax).sum(dim=1).log().mean()
         # neg_pred = (neg_pred * neg_softmax).sum(dim=1)
