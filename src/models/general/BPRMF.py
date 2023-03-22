@@ -3,9 +3,10 @@ Reference:
     "Bayesian personalized ranking from implicit feedback"
     Rendle et al., UAI'2009.
 CMD example:
-    python main.py --model_name BPRMF --emb_size 64 --lr 1e-3 --l2 1e-6 --dataset 'Grocery_and_Gourmet_Food'
+    python main.py --model_name BPRMF --emb_size 64 --lr 1e-3 --l2 1e-6 --dataset 'ml-100k'
 """
 
+import torch
 import torch.nn as nn
 
 from models.BaseModel import GeneralModel
@@ -34,11 +35,15 @@ class BPRMF(GeneralModel):
 
     def forward(self, feed_dict):
         self.check_list = []
-        u_ids = feed_dict['user_id']  # [batch_size]
-        i_ids = feed_dict['item_id']  # [batch_size, -1]
+        u_ids = feed_dict['user_id']  # [batch_size] [256]
+        i_ids = feed_dict['item_id']  # [batch_size, -1] [256, 2]
 
-        cf_u_vectors = self.u_embeddings(u_ids)
-        cf_i_vectors = self.i_embeddings(i_ids)
+        u_emb = self.u_embeddings(u_ids)  # [batch_size, emb_size] [256, 64]
+        i_emb = self.i_embeddings(i_ids)  # [batch_size, 2, emb_size] [256, 2, 64]
 
-        prediction = (cf_u_vectors[:, None, :] * cf_i_vectors).sum(dim=-1)  # [batch_size, -1]
-        return {'prediction': prediction.view(feed_dict['batch_size'], -1)}
+        # training: prediction[batch_size, 2]
+        # testing: prediction[batch_size, 100]
+        # [256, 1, emb_size] * [256, 2, emb_size] -> [256, 2, emb_size] -> [256, 2]
+        # In training phrase, first is positive, second is negative
+        prediction = torch.sum(torch.mul(torch.unsqueeze(u_emb, 1), i_emb), dim=-1)
+        return {'prediction': prediction}
