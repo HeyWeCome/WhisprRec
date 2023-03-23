@@ -47,3 +47,11 @@ class BPRMF(GeneralModel):
         # In training phrase, first is positive, second is negative
         prediction = torch.sum(torch.mul(torch.unsqueeze(u_emb, 1), i_emb), dim=-1)
         return {'prediction': prediction}
+
+    def loss(self, out_dict: dict) -> torch.Tensor:
+        predictions = out_dict['prediction']
+        pos_pred, neg_pred = predictions[:, 0], predictions[:, 1:]
+        neg_softmax = (neg_pred - neg_pred.max()).softmax(dim=1)
+        loss = -((pos_pred[:, None] - neg_pred).sigmoid() * neg_softmax).sum(dim=1).log().mean()
+
+        return loss
