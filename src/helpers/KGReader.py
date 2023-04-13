@@ -30,6 +30,7 @@ class KGReader(SeqReader):
 
     def _construct_kg(self):
         logging.info('Start building relational tuples')
+        logging.info('Start building relational tuples')
 
         self.triplet_set = set()
         heads, relations, tails = [], [], []
@@ -75,8 +76,8 @@ class KGReader(SeqReader):
         self.n_relations = len(self.relations) + 1
         # Put head and tail together, then take the number + 1
         self.n_entities = pd.concat((self.relation_df['head'], self.relation_df['tail'])).max() + 1
-        logging.info('"# relation": {}, "# triplet": {}'
-                     .format(self.n_relations, len(self.relation_df)))
+        logging.info('"# relation": {}, "# triplet": {}, "# entities": {}'
+                     .format(self.n_relations, len(self.relation_df), self.n_entities))
 
 
 if __name__ == '__main__':
