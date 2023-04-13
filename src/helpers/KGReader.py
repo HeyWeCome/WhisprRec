@@ -30,7 +30,6 @@ class KGReader(SeqReader):
 
     def _construct_kg(self):
         logging.info('Start building relational tuples')
-        logging.info('Start building relational tuples')
 
         self.triplet_set = set()
         heads, relations, tails = [], [], []
