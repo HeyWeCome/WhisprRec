@@ -3,6 +3,7 @@
 RecZoo is a collection of deep learning applications in recommendation algorithms. 
 It mainly collects the mainstream recommendation models and our team's research results in recommendation systems.
 The framework uses pytorch.
+IF you find this project is valuable, please **star** :).
 
 ## Get Started :snail:
 1. You have to install and configure the following environment: (My environment)
