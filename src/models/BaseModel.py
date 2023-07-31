@@ -12,7 +12,6 @@ from utils import utils
 from helpers.BaseReader import BaseReader
 from helpers.SeqReader import SeqReader
 
-
 # 基础模型类
 class BaseModel(nn.Module):
     reader, runner = None, None  # 根据不同的模型选择不同的helper
@@ -25,19 +24,6 @@ class BaseModel(nn.Module):
         parser.add_argument('--buffer', type=int, default=1,
                             help='Whether to buffer feed dicts for dev/test')
         return parser
-
-    @staticmethod
-    def init_weights(m):
-        """
-        :param m: 使用方差为0，标准差为0.01来进行参数初始化
-        :return:
-        """
-        if 'Linear' in str(type(m)):
-            nn.init.normal_(m.weight, mean=0.0, std=0.01)
-            if m.bias is not None:
-                nn.init.normal_(m.bias, mean=0.0, std=0.01)
-        elif 'Embedding' in str(type(m)):
-            nn.init.normal_(m.weight, mean=0.0, std=0.01)
 
     def __init__(self, args, corpus: BaseReader):
         super(BaseModel, self).__init__()
@@ -222,8 +208,8 @@ class GeneralModel(BaseModel):
 
 # 序列模型的Model
 class SequentialModel(GeneralModel):
-    reader = 'BaseReader'
-    # reader = 'SeqReader'
+    # reader = 'BaseReader'
+    reader = 'SeqReader'
 
     @staticmethod
     def parse_model_args(parser):

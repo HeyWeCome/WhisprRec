@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 
 from models.BaseModel import GeneralModel
-
+from models.init import xavier_normal_initialization
 
 class BPRMF(GeneralModel):
     reader = 'BaseReader'
@@ -27,7 +27,7 @@ class BPRMF(GeneralModel):
         super().__init__(args, corpus)
         self.emb_size = args.emb_size
         self._define_params()
-        self.apply(self.init_weights)
+        self.apply(xavier_normal_initialization)
 
     def _define_params(self):
         self.u_embeddings = nn.Embedding(self.user_num, self.emb_size)
