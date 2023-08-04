@@ -12,11 +12,11 @@ class BaseReader(object):
     @staticmethod
     def parse_data_args(parser):
         parser.add_argument('--path', type=str, default='../data/', help='Input data dir.')
-        parser.add_argument('--dataset', type=str, default='Food', help='Choose a dataset.')
+        parser.add_argument('--dataset', type=str, default='ml-100k', help='Choose a dataset.')
         parser.add_argument('--sep', type=str, default='\t', help='sep of csv file.')
         return parser
 
-    def __init__(self, args):
+    def __init__(self, args: argparse.Namespace) -> None:
         self.sep = args.sep
         self.prefix = args.path
         self.dataset = args.dataset
@@ -35,26 +35,46 @@ class BaseReader(object):
                 else:
                     self.residual_clicked_set[uid].add(iid)
 
-    # 读取数据 read data
-    def _read_data(self):
+    def _read_data(self) -> None:
         logging.info('Reading data from \"{}\", dataset = \"{}\" '
                      .format(self.prefix, self.dataset))
-        # 使用dict存储训练集、验证集和测试集
+        # Use data_df to store training set, validation set and test set
         self.data_df = dict()
         for key in ['train', 'dev', 'test']:
             self.data_df[key] = pd.read_csv(os.path.join(self.prefix, self.dataset, key + '.csv'), sep=self.sep)
             self.data_df[key] = utils.eval_list_columns(self.data_df[key])
 
-        logging.info('Counting dataset statistics...')
-        self.all_df = pd.concat([self.data_df[key][['user_id', 'item_id', 'time']]
-                                 for key in ['train', 'dev', 'test']])
-        # 这里也可以使用pd取列的长度
-        self.n_users, self.n_items = self.all_df['user_id'].max() + 1, self.all_df['item_id'].max() + 1
+        logging.info('Counting dataset statistics:')
+        # Join dataframes
+        train_df = self.data_df['train'][['user_id', 'item_id', 'time']]
+        dev_df = self.data_df['dev'][['user_id', 'item_id', 'time']]
+        test_df = self.data_df['test'][['user_id', 'item_id', 'time']]
+
+        self.all_df = pd.concat([train_df, dev_df, test_df])
+        # remove duplicate interactions:
+        self.all_df = self.all_df.drop_duplicates(['user_id', 'item_id'])
+
+        # Get dataset stats
+        self.n_users = self.all_df['user_id'].max() + 1
+        self.n_items = self.all_df['item_id'].max() + 1
+
+        # Validate negative items
         for key in ['dev', 'test']:
-            if 'neg_items' in self.data_df[key]:
-                neg_items = np.array(self.data_df[key]['neg_items'].tolist())
-                assert (neg_items >= self.n_items).sum() == 0  # assert negative items don't include unseen ones
-        # entry: 用户与物品的交互
-        logging.info('"# user": {}, "# item": {}, "# entry": {}'.format(
-            self.n_users - 1, self.n_items, len(self.all_df)
+            if 'neg_items' not in self.data_df[key]:
+                continue
+
+            neg_items = np.array(self.data_df[key]['neg_items'].tolist())
+
+            assert (neg_items >= self.n_items).sum() == 0
+
+        # Count active users and items
+        active_users = len(self.all_df['user_id'].unique())
+        active_items = len(self.all_df['item_id'].unique())
+        # Calculate number of interactions
+        n_interactions = len(self.all_df)
+        # Calculate density as interactions divided by total possible interactions
+        density = n_interactions / (active_users * active_items)
+
+        logging.info('"# user": {}, "# item": {}, "# entry": {}, "# density": {}%'.format(
+            self.n_users - 1, self.n_items, len(self.all_df), density*100
         ))
