@@ -5,6 +5,8 @@ It mainly collects the mainstream recommendation models and our team's research 
 The framework uses pytorch.
 IF you find this project is valuable, please **star** :).
 
+Thanks to the work of Rechorus and Recbole.
+
 ## Get Started :snail:
 1. You have to install and configure the following environment: (My environment)
 - Python >= 3.8
