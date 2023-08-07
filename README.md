@@ -31,4 +31,7 @@ python main.py --model_name BPRMF --emb_size 64 --lr 1e-3 --l2 1e-6 --dataset Fo
 ```
 
 ## The Current Model List :owl:
-todo
+| Model | HR@20  | NDCG@20 | Recall@20 |
+|-------|--------|---------|-----------|
+| BPRMF | 0.5658 | 0.3068  | 0.5658    |
+|       |        |         |           |
