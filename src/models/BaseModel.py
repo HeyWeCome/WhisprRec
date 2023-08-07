@@ -165,30 +165,18 @@ class GeneralModel(BaseModel):
         self.dropout = args.dropout
         self.test_all = args.test_all
 
-    # def loss(self, out_dict: dict) -> torch.Tensor:
-    #     """
-    #     BPR ranking loss with optimization on multiple negative samples (a little different now)
-    #     "Recurrent neural networks with top-k gains for session-based recommendations"
-    #     :param out_dict: contain prediction with [batch_size, -1], the first column for positive, the rest for negative
-    #     :return:
-    #     """
-    #     predictions = out_dict['prediction']
-    #     pos_pred, neg_pred = predictions[:, 0], predictions[:, 1:]  # (256,) (256,1)
-    #     neg_softmax = (neg_pred - neg_pred.max()).softmax(dim=1)
-    #     loss = -((pos_pred[:, None] - neg_pred).sigmoid() * neg_softmax).sum(dim=1).log().mean()
-    #     # neg_pred = (neg_pred * neg_softmax).sum(dim=1)
-    #     # loss = F.softplus(-(pos_pred - neg_pred)).mean()
-    #     # ↑ For numerical stability, use 'softplus(-x)' instead of '-log_sigmoid(x)'
-    #     return loss
-    # def loss(self, pos_score, neg_score):
-    #     """
-    #     BPR ranking loss with optimization on multiple negative samples (a little different now)
-    #     "Recurrent neural networks with top-k gains for session-based recommendations"
-    #     :param out_dict: contain prediction with [batch_size, -1], the first column for positive, the rest for negative
-    #     :return:
-    #     """
-    #     loss = BPRLoss()
-    #     return loss(pos_score, neg_score)
+    def calculate_loss(self, feed_dict):
+        user = feed_dict['user_id']
+        pos_item = feed_dict['pos_item']
+        neg_item = feed_dict['neg_items']
+
+        user_e, pos_e = self.forward(user, pos_item)
+        neg_e = self.get_item_embedding(neg_item)
+        pos_item_score = torch.mul(user_e, pos_e).sum(dim=1)
+        neg_item_score = torch.mul(user_e, neg_e).sum(dim=1)
+        bpr_loss = BPRLoss()
+        loss = bpr_loss(pos_item_score, neg_item_score)
+        return loss
 
     class Dataset(BaseModel.Dataset):
         def _get_feed_dict(self, index):
