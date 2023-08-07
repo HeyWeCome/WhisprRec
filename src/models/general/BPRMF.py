@@ -39,28 +39,6 @@ class BPRMF(GeneralModel):
         # parameters initialization
         self.apply(xavier_normal_initialization)
 
-    # def forward(self, feed_dict):
-    #     self.check_list = []
-    #     u_ids = feed_dict['user_id']  # [batch_size] [256]
-    #     pos_id = feed_dict['pos_item']
-    #     neg_ids = feed_dict['neg_items']
-    #
-    #     # i_ids = feed_dict['item_id']  # [batch_size, -1] [256, 2]
-    #
-    #     u_emb = self.user_embeddings(u_ids)  # [batch_size, emb_size] [256, 64]
-    #     pos_emb = self.item_embeddings(pos_id)
-    #     neg_emb = self.item_embeddings(neg_ids)
-    #
-    #     u_emb_expanded = u_emb.unsqueeze(1).repeat(1, neg_emb.size(1), 1)
-    #     pos_item_score = torch.mul(u_emb, pos_emb)
-    #     neg_item_score = torch.mul(u_emb_expanded, neg_emb).sum(dim=-1)
-    #     loss = self.loss(pos_item_score, pos_item_score)
-    #     # i_emb = self.item_embeddings(i_ids)  # [batch_size, 2, emb_size] [256, 2, 64]
-    #
-    #     # prediction = torch.sum(torch.mul(torch.unsqueeze(u_emb, 1), i_emb), dim=-1)
-    #     # return {'prediction': prediction}
-    #     return pos_item_score, neg_item_score, loss
-
     def get_user_embedding(self, user):
         r"""Get a batch of user embedding tensor according to input user's id.
 
