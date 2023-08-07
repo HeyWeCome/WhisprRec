@@ -11,6 +11,8 @@ from typing import List
 from utils import utils
 from helpers.BaseReader import BaseReader
 from helpers.SeqReader import SeqReader
+from utils.loss import BPRLoss
+
 
 # 基础模型类
 class BaseModel(nn.Module):
@@ -88,13 +90,13 @@ class BaseModel(nn.Module):
     """
     class Dataset(BaseDataset):
         def __init__(self, model, corpus, phase: str):
-            self.model = model  # 模型
-            self.corpus = corpus  # reader的reference
+            self.model = model  # Model
+            self.corpus = corpus  # The reference of reader
             self.phase = phase  # train / dev / test
 
             self.buffer_dict = dict()
+            # DataFrame is not compatible with multiple threaded operation, convert to dict
             self.data = utils.df_to_dict(corpus.data_df[phase])
-            # ↑ DataFrame 不兼容多线程操作，转为dict
 
         def __len__(self):
             if type(self.data) == dict:
@@ -128,12 +130,12 @@ class BaseModel(nn.Module):
                 if isinstance(feed_dicts[0][key], np.ndarray):
                     tmp_list = [len(d[key]) for d in feed_dicts]
                     if any([tmp_list[0] != l for l in tmp_list]):
-                        stack_val = np.array([d[key] for d in feed_dicts], dtype=np.object)
+                        stack_val = np.array([d[key] for d in feed_dicts], dtype=object)
                     else:
                         stack_val = np.array([d[key] for d in feed_dicts])
                 else:
                     stack_val = np.array([d[key] for d in feed_dicts])
-                if stack_val.dtype == np.object:  # inconsistent length (e.g., history)
+                if stack_val.dtype == object:  # inconsistent length (e.g., history)
                     feed_dict[key] = pad_sequence([torch.from_numpy(x) for x in stack_val], batch_first=True)
                 else:
                     feed_dict[key] = torch.from_numpy(stack_val)
@@ -163,21 +165,30 @@ class GeneralModel(BaseModel):
         self.dropout = args.dropout
         self.test_all = args.test_all
 
-    def loss(self, out_dict: dict) -> torch.Tensor:
-        """
-        BPR ranking loss with optimization on multiple negative samples (a little different now)
-        "Recurrent neural networks with top-k gains for session-based recommendations"
-        :param out_dict: contain prediction with [batch_size, -1], the first column for positive, the rest for negative
-        :return:
-        """
-        predictions = out_dict['prediction']
-        pos_pred, neg_pred = predictions[:, 0], predictions[:, 1:]  # (256,) (256,1)
-        neg_softmax = (neg_pred - neg_pred.max()).softmax(dim=1)
-        loss = -((pos_pred[:, None] - neg_pred).sigmoid() * neg_softmax).sum(dim=1).log().mean()
-        # neg_pred = (neg_pred * neg_softmax).sum(dim=1)
-        # loss = F.softplus(-(pos_pred - neg_pred)).mean()
-        # ↑ For numerical stability, use 'softplus(-x)' instead of '-log_sigmoid(x)'
-        return loss
+    # def loss(self, out_dict: dict) -> torch.Tensor:
+    #     """
+    #     BPR ranking loss with optimization on multiple negative samples (a little different now)
+    #     "Recurrent neural networks with top-k gains for session-based recommendations"
+    #     :param out_dict: contain prediction with [batch_size, -1], the first column for positive, the rest for negative
+    #     :return:
+    #     """
+    #     predictions = out_dict['prediction']
+    #     pos_pred, neg_pred = predictions[:, 0], predictions[:, 1:]  # (256,) (256,1)
+    #     neg_softmax = (neg_pred - neg_pred.max()).softmax(dim=1)
+    #     loss = -((pos_pred[:, None] - neg_pred).sigmoid() * neg_softmax).sum(dim=1).log().mean()
+    #     # neg_pred = (neg_pred * neg_softmax).sum(dim=1)
+    #     # loss = F.softplus(-(pos_pred - neg_pred)).mean()
+    #     # ↑ For numerical stability, use 'softplus(-x)' instead of '-log_sigmoid(x)'
+    #     return loss
+    # def loss(self, pos_score, neg_score):
+    #     """
+    #     BPR ranking loss with optimization on multiple negative samples (a little different now)
+    #     "Recurrent neural networks with top-k gains for session-based recommendations"
+    #     :param out_dict: contain prediction with [batch_size, -1], the first column for positive, the rest for negative
+    #     :return:
+    #     """
+    #     loss = BPRLoss()
+    #     return loss(pos_score, neg_score)
 
     class Dataset(BaseModel.Dataset):
         def _get_feed_dict(self, index):
@@ -186,10 +197,15 @@ class GeneralModel(BaseModel):
                 neg_items = np.arange(1, self.corpus.n_items)
             else:
                 neg_items = self.data['neg_items'][index]
-            item_ids = np.concatenate([[target_item], neg_items]).astype(int)
+            # item_ids = np.concatenate([[target_item], neg_items]).astype(int)
+
+            pos_item = target_item
+            neg_items = neg_items
+
             feed_dict = {
                 'user_id': user_id,
-                'item_id': item_ids
+                'pos_item': pos_item,
+                'neg_items': neg_items
             }
             return feed_dict
 
@@ -203,6 +219,8 @@ class GeneralModel(BaseModel):
                 for j in range(self.model.num_neg):
                     while neg_items[i][j] in clicked_set:
                         neg_items[i][j] = np.random.randint(1, self.corpus.n_items)
+            # Flatten to 1D
+            neg_items = neg_items.reshape(-1)
             self.data['neg_items'] = neg_items
 
 
