@@ -64,6 +64,24 @@ class BaseRunner(object):
                     evaluations[key] = hit.mean()
                 elif metric == 'NDCG':
                     evaluations[key] = (hit / np.log2(gt_rank + 1)).mean()
+                elif metric == 'Recall':
+                    # Recall
+                    evaluations[key] = (gt_rank <= k).mean()
+                elif metric == 'Precision':
+                    # Precision@K
+                    num_users = len(gt_rank)
+                    precisions = []
+
+                    for i in range(num_users):
+                        pred_items = predictions[i][:k]
+                        rel_items = predictions[i][predictions[i] > 0]
+
+                        num_hit = len(set(pred_items) & set(rel_items))
+                        prec = num_hit / len(pred_items)
+
+                        precisions.append(prec)
+
+                    evaluations[key] = np.mean(precisions)
                 else:
                     raise ValueError('Undefined evaluation metric: {}.'.format(metric))
         return evaluations
@@ -171,8 +189,7 @@ class BaseRunner(object):
         for batch in tqdm(dl, leave=False, desc='Epoch {:<3}'.format(epoch), ncols=100, mininterval=1):
             batch = utils.batch_to_gpu(batch, model.device)
             model.optimizer.zero_grad()
-            out_dict = model(batch)
-            loss = model.loss(out_dict)
+            loss = model.calculate_loss(batch)
             loss.backward()
             model.optimizer.step()
             loss_lst.append(loss.detach().cpu().data.numpy())
@@ -201,7 +218,8 @@ class BaseRunner(object):
                  predictions like: [[1,3,4], [2,5,6]]
         """
         dataset.model.eval()
-        predictions = list()
+        predictions, pos_scores_list, neg_scores_list = [], [], []
+
         dl = DataLoader(dataset,
                         batch_size=self.eval_batch_size,
                         shuffle=False,
@@ -209,9 +227,14 @@ class BaseRunner(object):
                         collate_fn=dataset.collate_batch,
                         pin_memory=self.pin_memory)
         for batch in tqdm(dl, leave=False, ncols=100, mininterval=1, desc='Predict'):
-            prediction = dataset.model(utils.batch_to_gpu(batch, dataset.model.device))['prediction']
-            predictions.extend(prediction.cpu().data.numpy())
-        predictions = np.array(predictions)
+            pos_scores, neg_scores = dataset.model.predict(utils.batch_to_gpu(batch, dataset.model.device))
+            pos_scores_list.append(pos_scores)
+            neg_scores_list.append(neg_scores)
+
+        pos_scores = torch.cat(pos_scores_list).detach()
+        neg_scores = torch.cat(neg_scores_list).detach()
+
+        predictions = torch.cat([pos_scores.unsqueeze(1), neg_scores], dim=1).cpu().numpy()
 
         if dataset.model.test_all:
             rows, cols = list(), list()
@@ -223,6 +246,7 @@ class BaseRunner(object):
             predictions[rows, cols] = -np.inf
 
         return predictions
+
 
     def print_res(self, dataset: BaseModel.Dataset) -> str:
         """
