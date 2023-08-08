@@ -1,5 +1,5 @@
 [//]: # (![logo]&#40;logo.png&#41;)
-# RecZoo :panda_face:
+# WhisprRec :panda_face:
 WhisprRec is a collection of deep learning applications in recommendation algorithms. 
 It mainly collects the mainstream recommendation models and our team's research results in recommendation systems.
 The framework uses pytorch.
