@@ -1,6 +1,6 @@
 [//]: # (![logo]&#40;logo.png&#41;)
 # RecZoo :panda_face:
-RecZoo is a collection of deep learning applications in recommendation algorithms. 
+WhisprRec is a collection of deep learning applications in recommendation algorithms. 
 It mainly collects the mainstream recommendation models and our team's research results in recommendation systems.
 The framework uses pytorch.
 IF you find this project is valuable, please **star** :).
@@ -17,12 +17,12 @@ Thanks to the work of Rechorus and Recbole.
 
 2. Clone this repository:
 ```bash
-git clone https://github.com/HeyWeCome/RecZoo.git
+git clone https://github.com/HeyWeCome/WhisprRec.git
 ```
 
 3. cd into 'src'
 ```bash
-cd RecZoo/src
+cd WhisprRec/src
 ```
 
 4. Run your or build-in dataset
