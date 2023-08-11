@@ -13,12 +13,14 @@ import torch.nn as nn
 import scipy.sparse as sp
 
 from models.BaseModel import GeneralModel
+from models.init import xavier_uniform_initialization
+from utils.loss import BPRLoss, EmbLoss
 
 
 class LightGCN(GeneralModel):
     reader = 'BaseReader'
     runner = 'BaseRunner'
-    extra_log_args = ['emb_size', 'gcn_layers']
+    extra_log_args = ['emb_size', 'gcn_layers', 'reg_weight']
 
     @staticmethod
     def parse_model_args(parser):
@@ -26,106 +28,163 @@ class LightGCN(GeneralModel):
                             help='Size of embedding vectors.')
         parser.add_argument('--gcn_layers', type=int, default=3,
                             help='Number of LightGCN layers.')
+        parser.add_argument('--reg_weight', type=float, default=1e-05,
+                            help='The L2 regularization weight.')
         return GeneralModel.parse_model_args(parser)
 
     def __init__(self, args, corpus):
         super().__init__(args, corpus)
         self.emb_size = args.emb_size
         self.gcn_layers = args.gcn_layers
-        self.norm_adj = self.build_adjmat(corpus.n_users, corpus.n_items, corpus.train_clicked_set)
-        self._define_params()
-        self.apply(self.init_weights)
+        self.n_users = corpus.n_users
+        self.n_items = corpus.n_items
+        self.reg_weight = args.reg_weight
+
+        # define layers and loss
+        self.user_embedding = nn.Embedding(self.n_users, self.emb_size)
+        self.item_embedding = nn.Embedding(self.n_items, self.emb_size)
+        self.mf_loss = BPRLoss()
+        self.reg_loss = EmbLoss()
+        self.norm_adj = self.build_adjmat(corpus.n_users,
+                                          corpus.n_items,
+                                          corpus.train_clicked_set,
+                                          device=self.device)
+        self.apply(xavier_uniform_initialization)
 
     @staticmethod
-    def build_adjmat(user_count, item_count, train_mat, selfloop_flag=False):
+    def build_adjmat(user_count, item_count, train_mat, device, selfloop_flag=False):
+        # Construct a binary user-item interaction matrix R
         R = sp.dok_matrix((user_count, item_count), dtype=np.float32)
         for user in train_mat:
             for item in train_mat[user]:
                 R[user, item] = 1
         R = R.tolil()
 
+        # Construct the adjacency matrix for users and items
         adj_mat = sp.dok_matrix((user_count + item_count, user_count + item_count), dtype=np.float32)
         adj_mat = adj_mat.tolil()
 
+        # Populate the adjacency matrix with user-item interactions
         adj_mat[:user_count, user_count:] = R
         adj_mat[user_count:, :user_count] = R.T
         adj_mat = adj_mat.todok()
 
+        # Define a function to normalize the adjacency matrix
         def normalized_adj_single(adj):
-            # D^-1/2 * A * D^-1/2
+            # Calculate the sum of interactions for each node (user/item)
             rowsum = np.array(adj.sum(1)) + 1e-10
 
+            # Calculate the inverse square root of the rowsum for diagonal matrix D^-0.5
             d_inv_sqrt = np.power(rowsum, -0.5).flatten()
             d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
             d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
 
+            # Calculate the bi-Laplacian normalized adjacency matrix: D^-0.5 * A * D^-0.5
             bi_lap = d_mat_inv_sqrt.dot(adj).dot(d_mat_inv_sqrt)
-            return bi_lap.tocoo()
+
+            # Convert the bi-Laplacian normalized adjacency matrix to COO format
+            coo_bi_lap = bi_lap.tocoo()
+
+            # Extract the COO matrix components
+            row = coo_bi_lap.row  # Row indices of non-zero elements
+            col = coo_bi_lap.col  # Column indices of non-zero elements
+            data = coo_bi_lap.data  # Values of non-zero elements
+
+            # Convert the COO matrix components to PyTorch tensors
+            i = torch.LongTensor(np.array([row, col]))
+            # data_tensor = torch.FloatTensor(data)
+            data_tensor = torch.from_numpy(data).float()
+
+            # Create a sparse tensor using the COO matrix components and shape
+            sparse_bi_lap = torch.sparse.FloatTensor(i, data_tensor, torch.Size(coo_bi_lap.shape))
+
+            return sparse_bi_lap
 
         if selfloop_flag:
-            norm_adj_mat = normalized_adj_single(adj_mat + sp.eye(adj_mat.shape[0]))
+            # If selfloop_flag is True, add self-loops and then normalize
+            # This is useful for improving stability and connectivity in certain algorithms
+            adj_mat_with_selfloop = adj_mat + sp.eye(adj_mat.shape[0])
+            norm_adj_mat = normalized_adj_single(adj_mat_with_selfloop)
         else:
+            # If selfloop_flag is False, normalize the original adjacency matrix
             norm_adj_mat = normalized_adj_single(adj_mat)
 
-        return norm_adj_mat.tocsr()
+        if device == 'cuda':
+            # If the device is not 'cpu', move the tensor to the specified device
+            # Return the normalized adjacency matrix as a PyTorch sparse tensor
+            norm_adj_mat = norm_adj_mat.to(device)
+            return norm_adj_mat
+        else:
+            norm_adj_mat = norm_adj_mat.to_dense().to(device)
+            return norm_adj_mat
 
-    def _define_params(self):
-        self.user_embedding = nn.Embedding(self.user_num, self.emb_size)
-        self.item_embedding = nn.Embedding(self.item_num, self.emb_size)
-        self.encoder = LGCNEncoder(self.user_num, self.item_num, self.user_embedding, self.item_embedding, self.emb_size, self.norm_adj, self.gcn_layers)
+    def get_ego_embeddings(self):
+        """
+        Get the embedding of users and items and combine to an embedding matrix.
+        Returns:
+            Tensor of the embedding matrix. Shape of [user_count+item_count, embedding_dim]
+        """
+        user_embeddings = self.user_embedding.weight
+        item_embeddings = self.item_embedding.weight
+        ego_embeddings = torch.cat([user_embeddings, item_embeddings], dim=0)
+        return ego_embeddings
 
     def forward(self, feed_dict):
-        self.check_list = []
-        user, items = feed_dict['user_id'], feed_dict['item_id']
-        u_embed, i_embed = self.encoder(user, items)
+        ego_embeddings = self.get_ego_embeddings().to(self.device)  # [n_items+n_users, embedding_dim]
+        embedding_list = [ego_embeddings]
 
-        prediction = (u_embed[:, None, :] * i_embed).sum(dim=-1)
-        out_dict = {'prediction': prediction}
-        return out_dict
+        for layer_idx in range(self.gcn_layers):
+            ego_embeddings = torch.sparse.mm(self.norm_adj, ego_embeddings)
+            embedding_list.append(ego_embeddings)
 
+        lightgcn_all_embeddings = torch.stack(embedding_list, dim=1)
+        lightgcn_all_embeddings = torch.mean(lightgcn_all_embeddings, dim=1)  # equals to \alpha = 1/(K+1)
 
-class LGCNEncoder(nn.Module):
-    def __init__(self, user_count, item_count, u_emb, i_emb, emb_size, norm_adj, gcn_layers=3):
-        super(LGCNEncoder, self).__init__()
-        self.user_count = user_count
-        self.item_count = item_count
-        self.emb_size = emb_size
-        self.layers = [emb_size] * gcn_layers
-        self.norm_adj = norm_adj
+        user_all_embeddings, item_all_embeddings = torch.split(
+            lightgcn_all_embeddings, [self.n_users, self.n_items]
+        )
+        return user_all_embeddings, item_all_embeddings
 
-        self.embedding_dict = self._init_model(u_emb, i_emb)
-        self.sparse_norm_adj = self._convert_sp_mat_to_sp_tensor(self.norm_adj).cuda()
+    def calculate_loss(self, feed_dict):
+        user = feed_dict['user_id']
+        pos_item = feed_dict['pos_item']
+        neg_items = feed_dict['neg_items']
 
-    def _init_model(self, u_emb, i_emb):
-        initializer = nn.init.xavier_uniform_
-        embedding_dict = nn.ParameterDict({
-            'user_emb': nn.Parameter(u_emb.weight),
-            'item_emb': nn.Parameter(i_emb.weight),
-        })
-        return embedding_dict
+        user_all_embeddings, item_all_embeddings = self.forward(feed_dict)
+        u_embeddings = user_all_embeddings[user]
+        pos_embeddings = item_all_embeddings[pos_item]
+        neg_embeddings = item_all_embeddings[neg_items]
 
-    @staticmethod
-    def _convert_sp_mat_to_sp_tensor(X):
-        coo = X.tocoo()
-        i = torch.LongTensor([coo.row, coo.col])
-        v = torch.from_numpy(coo.data).float()
-        return torch.sparse.FloatTensor(i, v, coo.shape)
+        # Calculate BPR Loss
+        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
+        mf_loss = self.mf_loss(pos_scores, neg_scores)
 
-    def forward(self, users, items):
-        ego_embeddings = torch.cat([self.embedding_dict['user_emb'], self.embedding_dict['item_emb']], 0)
-        all_embeddings = [ego_embeddings]
+        # Calculate Emb loss
+        u_ego_embeddings = self.user_embedding(user)
+        pos_ego_embeddings = self.item_embedding(pos_item)
+        neg_ego_embeddings = self.item_embedding(neg_items)
+        reg_loss = self.reg_loss(
+            u_ego_embeddings,
+            pos_ego_embeddings,
+            neg_ego_embeddings,
+        )
 
-        for k in range(len(self.layers)):
-            ego_embeddings = torch.sparse.mm(self.sparse_norm_adj, ego_embeddings)
-            all_embeddings += [ego_embeddings]
+        return mf_loss + self.reg_weight * reg_loss
 
-        all_embeddings = torch.stack(all_embeddings, dim=1)
-        all_embeddings = torch.mean(all_embeddings, dim=1)
+    def predict(self, feed_dict):
+        user = feed_dict['user_id']
+        pos_item = feed_dict['pos_item']
+        neg_item = feed_dict['neg_items']
 
-        user_all_embeddings = all_embeddings[:self.user_count, :]
-        item_all_embeddings = all_embeddings[self.user_count:, :]
+        user_all_embeddings, item_all_embeddings = self.forward(feed_dict)
 
-        user_embeddings = user_all_embeddings[users, :]
-        item_embeddings = item_all_embeddings[items, :]
+        u_embeddings = user_all_embeddings[user]
+        pos_embeddings = item_all_embeddings[pos_item]
+        neg_embeddings = item_all_embeddings[neg_item]
 
-        return user_embeddings, item_embeddings
+        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
+        # expand the user embedding to match the shape of neg_items
+        user_e = u_embeddings.unsqueeze(1)  # (batch_size, 1, emb_size)
+        neg_scores = (user_e * neg_embeddings).sum(dim=-1)  # (batch_size, neg_item_num)
+        return pos_scores, neg_scores
