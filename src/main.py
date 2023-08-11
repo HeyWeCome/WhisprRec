@@ -15,7 +15,7 @@ from utils import utils
 
 
 def parse_global_args(parser):
-    parser.add_argument('--gpu', type=str, default='cuda',
+    parser.add_argument('--gpu', type=str, default='0',
                         help='Set CUDA_VISIBLE_DEVICES, default for CPU only')
     parser.add_argument('--verbose', type=int, default=logging.INFO,
                         help='Logging Level, 0, 10, ..., 50')
@@ -102,7 +102,7 @@ def save_rec_results(dataset, runner, topk):
 
 if __name__ == '__main__':
     init_parser = argparse.ArgumentParser(description='Model')
-    init_parser.add_argument('--model_name', type=str, default='BPRMF', help='Choose a model to run.')
+    init_parser.add_argument('--model_name', type=str, default='LightGCN', help='Choose a model to run.')
     init_args, init_extras = init_parser.parse_known_args()
     model_name = eval('{0}.{0}'.format(init_args.model_name))
     reader_name = eval('{0}.{0}'.format(model_name.reader))  # model chooses the reader
