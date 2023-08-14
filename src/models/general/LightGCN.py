@@ -32,13 +32,13 @@ class LightGCN(GeneralModel):
                             help='The L2 regularization weight.')
         return GeneralModel.parse_model_args(parser)
 
-    def __init__(self, args, corpus):
-        super().__init__(args, corpus)
-        self.emb_size = args.emb_size
-        self.gcn_layers = args.gcn_layers
+    def __init__(self, corpus, configs):
+        super().__init__(corpus, configs)
+        self.emb_size = configs['model']['embedding_size']
+        self.gcn_layers = configs['model']['gcn_layers']
         self.n_users = corpus.n_users
         self.n_items = corpus.n_items
-        self.reg_weight = args.reg_weight
+        self.reg_weight = float(configs['model']['reg_weight'])
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.emb_size)
