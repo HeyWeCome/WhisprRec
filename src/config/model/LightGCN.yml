@@ -1,0 +1,12 @@
+model:
+    name: 'LightGCN'
+    embedding_size: 64
+    gcn_layers: 3
+    reg_weight: !!float 1e-05
+reader:
+    name: 'BaseReader'
+runner:
+    name: 'BaseRunner'
+    lr: !!float 1e-3
+    l2: !!float 1e-8
+    epoch: 400
