@@ -25,11 +25,11 @@ class BPRMF(GeneralModel):
                             help='Size of embedding vectors.')
         return GeneralModel.parse_model_args(parser)
 
-    def __init__(self, args, corpus):
-        super().__init__(args, corpus)
+    def __init__(self, corpus, configs):
+        super().__init__(corpus, configs)
 
         # load parameter info
-        self.emb_size = args.emb_size
+        self.emb_size = configs['model']['embedding_size']
 
         # define layers and loss
         self.user_embeddings = nn.Embedding(self.user_num, self.emb_size)

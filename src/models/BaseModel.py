@@ -19,19 +19,11 @@ class BaseModel(nn.Module):
     reader, runner = None, None  # 根据不同的模型选择不同的helper
     extra_log_args = []  # 需要额外记录的参数
 
-    @staticmethod
-    def parse_model_args(parser):
-        parser.add_argument('--model_path', type=str, default='',
-                            help='Model save path.')
-        parser.add_argument('--buffer', type=int, default=1,
-                            help='Whether to buffer feed dicts for dev/test')
-        return parser
-
-    def __init__(self, args, corpus: BaseReader):
+    def __init__(self, corpus: BaseReader, configs):
         super(BaseModel, self).__init__()
-        self.device = args.device
-        self.model_path = args.model_path
-        self.buffer = args.buffer
+        self.device = configs['device']
+        self.model_path = configs['model_path']
+        self.buffer = configs['reader']['buffer']
         self.optimizer = None
         self.check_list = list()  # observe tensors in check_list every check_epoch
 
@@ -147,23 +139,12 @@ class BaseModel(nn.Module):
 class GeneralModel(BaseModel):
     reader, runner = 'BaseReader', 'BaseRunner'
 
-    @staticmethod
-    def parse_model_args(parser):
-        parser.add_argument('--num_neg', type=int, default=1,
-                            help='The number of negative items during training.')
-        parser.add_argument('--dropout', type=float, default=0,
-                            help='Dropout probability for each deep layer')
-        parser.add_argument('--test_all', type=int, default=0,
-                            help='Whether testing on all the items.')
-        return BaseModel.parse_model_args(parser)
-
-    def __init__(self, args, corpus):
-        super().__init__(args, corpus)
+    def __init__(self, corpus, configs):
+        super().__init__(corpus, configs)
         self.user_num = corpus.n_users
         self.item_num = corpus.n_items
-        self.num_neg = args.num_neg
-        self.dropout = args.dropout
-        self.test_all = args.test_all
+        self.num_neg = configs['runner']['num_neg']
+        self.test_all = configs['runner']['test_all']
 
     def calculate_loss(self, feed_dict):
         user = feed_dict['user_id']

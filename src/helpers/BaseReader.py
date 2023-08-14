@@ -16,10 +16,10 @@ class BaseReader(object):
         parser.add_argument('--sep', type=str, default='\t', help='sep of csv file.')
         return parser
 
-    def __init__(self, args: argparse.Namespace) -> None:
-        self.sep = args.sep
-        self.prefix = args.path
-        self.dataset = args.dataset
+    def __init__(self, configs):
+        self.sep = configs['reader']['sep']
+        self.prefix = configs['reader']['path']
+        self.dataset = configs['reader']['dataset']
         self._read_data()
 
         self.train_clicked_set = dict()  # store the clicked item set of each user in training set

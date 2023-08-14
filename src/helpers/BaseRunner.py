@@ -86,20 +86,20 @@ class BaseRunner(object):
                     raise ValueError('Undefined evaluation metric: {}.'.format(metric))
         return evaluations
 
-    def __init__(self, args):
-        self.epoch = args.epoch
-        self.check_epoch = args.check_epoch
-        self.test_epoch = args.test_epoch
-        self.early_stop = args.early_stop
-        self.learning_rate = args.lr
-        self.batch_size = args.batch_size
-        self.eval_batch_size = args.eval_batch_size
-        self.l2 = args.l2
-        self.optimizer_name = args.optimizer
-        self.num_workers = args.num_workers
-        self.pin_memory = args.pin_memory
-        self.topk = [int(x) for x in args.topk.split(',')]
-        self.metrics = [m.strip().upper() for m in args.metric.split(',')]
+    def __init__(self, configs):
+        self.epoch = configs['runner']['epoch']
+        self.check_epoch = configs['runner']['check_epoch']
+        self.test_epoch = configs['runner']['test_epoch']
+        self.early_stop = configs['runner']['early_stop']
+        self.learning_rate = float(configs['runner']['lr'])
+        self.batch_size = configs['runner']['batch_size']
+        self.eval_batch_size = configs['runner']['eval_batch_size']
+        self.l2 = configs['runner']['l2']
+        self.optimizer_name = configs['runner']['optimizer']
+        self.num_workers = configs['runner']['num_workers']
+        self.pin_memory = configs['runner']['pin_memory']
+        self.topk = [int(x) for x in configs['runner']['topk'].split(',')]
+        self.metrics = [m.strip().upper() for m in configs['runner']['metric'].split(',')]
         self.main_metric = '{}@{}'.format(self.metrics[0], self.topk[0])  # early stop based on main_metric
 
         self.time = None  # will store [start_time, last_step_time]
