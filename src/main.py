@@ -9,6 +9,7 @@ import yaml
 
 from helpers import *
 from helpers.BaseRunner import BaseRunner
+from helpers.BaseReader import BaseReader
 # from models.developing import *
 # from models.graph import *
 from models.general import *
@@ -16,7 +17,7 @@ from models.sequential import *
 from utils import utils
 
 
-def parse_global_args(parser):
+def parse_global_args(parser, configs):
     parser.add_argument('--gpu', type=str, default='0',
                         help='Set CUDA_VISIBLE_DEVICES, default for CPU only')
     parser.add_argument('--verbose', type=int, default=logging.INFO,
@@ -31,6 +32,18 @@ def parse_global_args(parser):
                         help='To train the model or not.')
     parser.add_argument('--regenerate', type=int, default=1,
                         help='Whether to regenerate intermediate files')
+
+    args, extras = parser.parse_known_args()
+
+    # Update the configs dictionary with the parsed arguments
+    configs['gpu'] = args.gpu
+    configs['verbose'] = args.verbose
+    configs['log_file'] = args.log_file
+    configs['random_seed'] = args.random_seed
+    configs['load'] = args.load
+    configs['train'] = args.train
+    configs['regenerate'] = args.regenerate
+
     return parser
 
 
@@ -158,18 +171,17 @@ if __name__ == '__main__':
     # load the overall config file
     parse_config(configs)
 
-    # Args
-    # parser = argparse.ArgumentParser(description='')
-    # parser = parse_global_args(parser)
-    # parser = reader_name.parse_data_args(parser)
-    # parser = runner_name.parse_runner_args(parser)
-    # parser = model_name.parse_model_args(parser)
-    # args, extras = parser.parse_known_args()
-
     # Dynamic create reader and runner
     model_name = eval('{0}.{0}'.format(init_args.model_name))
     reader_name = eval('{0}'.format(configs['reader']['name']))  # model chooses the reader
     runner_name = eval('{0}'.format(configs['runner']['name']))  # model chooses the runner
+
+    # Args
+    parser = argparse.ArgumentParser(description='')
+    parser = parse_global_args(parser, configs)
+    parser = reader_name.parse_reader_args(parser, configs)
+    parser = runner_name.parse_runner_args(parser, configs)
+    parser = model_name.parse_model_args(parser, configs)
 
     log_args = [configs['model']['name'],
                 configs['reader']['dataset'],

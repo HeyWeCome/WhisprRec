@@ -10,10 +10,18 @@ from utils import utils
 
 class BaseReader(object):
     @staticmethod
-    def parse_data_args(parser):
+    def parse_reader_args(parser, configs):
         parser.add_argument('--path', type=str, default='../data/', help='Input data dir.')
         parser.add_argument('--dataset', type=str, default='ml-100k', help='Choose a dataset.')
         parser.add_argument('--sep', type=str, default='\t', help='sep of csv file.')
+
+        args, extras = parser.parse_known_args()
+
+        # Update the configs dictionary with the parsed arguments
+        configs['reader']['path'] = args.path
+        configs['reader']['dataset'] = args.dataset
+        configs['reader']['sep'] = args.sep
+
         return parser
 
     def __init__(self, configs):

@@ -15,6 +15,17 @@ from utils.loss import BPRLoss
 
 
 class BPRMF(GeneralModel):
+
+    @staticmethod
+    def parse_model_args(parser, configs):
+        parser.add_argument('--embedding_size', type=int, default=64,
+                            help='Size of embedding vectors.')
+        args, extras = parser.parse_known_args()
+        # Update the configs dictionary with the parsed arguments
+        configs['model']['embedding_size'] = args.embedding_size
+        return parser
+
+
     def __init__(self, corpus, configs):
         super().__init__(corpus, configs)
 
