@@ -15,16 +15,6 @@ from utils.loss import BPRLoss
 
 
 class BPRMF(GeneralModel):
-    reader = 'BaseReader'
-    runner = 'BaseRunner'
-    extra_log_args = ['emb_size']
-
-    @staticmethod
-    def parse_model_args(parser):
-        parser.add_argument('--emb_size', type=int, default=64,
-                            help='Size of embedding vectors.')
-        return GeneralModel.parse_model_args(parser)
-
     def __init__(self, corpus, configs):
         super().__init__(corpus, configs)
 
