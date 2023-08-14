@@ -6,6 +6,6 @@ reader:
     name: 'BaseReader'
 runner:
     name: 'BaseRunner'
-    lr: 1e-3
-    l2: 1e-6
+    lr: !!float 1e-3
+    l2: !!float 1e-6
     epoch: 400
