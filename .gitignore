@@ -131,7 +131,7 @@ dmypy.json
 # idea
 .idea
 log/
-model/
+*.pt
 *.pkl
 RecBole/
 src/draw/
