@@ -1,0 +1,9 @@
+model:
+    name: 'BPRMF'
+    embedding_size: 64
+
+reader:
+    name: 'BaseReader'
+runner:
+    name: 'BaseRunner'
+    epoch: 400
