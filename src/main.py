@@ -157,7 +157,6 @@ if __name__ == '__main__':
 
     # load the overall config file
     parse_config(configs)
-    print("Present", configs)
 
     # Args
     # parser = argparse.ArgumentParser(description='')
