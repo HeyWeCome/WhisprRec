@@ -1,7 +1,7 @@
 model:
     name: 'LightGCN'
     embedding_size: 64
-    gcn_layers: 3
+    gcn_layers: 2
     reg_weight: !!float 1e-05
 reader:
     name: 'BaseReader'
