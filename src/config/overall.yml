@@ -23,7 +23,7 @@ runner:
   optimizer: 'Adam'     # optimizer: SGD, Adam, Adagrad, Adadelta
   num_workers: 5        # Number of processors when prepare batches in DataLoader
   pin_memory: 0         # pin_memory in DataLoader
-  topk: '5,10,20,50'    # The number of items recommended to each user.
+  topk: '10,20'         # The number of items recommended to each user.
   metric: 'NDCG, HR'    # Evaluation metrics
   num_neg: 1            # sample one negative item while training
   test_all: 1           # Whether testing on all the items. Default is yes.
