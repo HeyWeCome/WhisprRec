@@ -19,14 +19,20 @@ from utils.loss import BPRLoss, EmbLoss
 
 class LightGCN(GeneralModel):
     @staticmethod
-    def parse_model_args(parser):
-        parser.add_argument('--emb_size', type=int, default=64,
+    def parse_model_args(parser, configs):
+        parser.add_argument('--embedding_size', type=int, default=64,
                             help='Size of embedding vectors.')
         parser.add_argument('--gcn_layers', type=int, default=3,
                             help='Number of LightGCN layers.')
         parser.add_argument('--reg_weight', type=float, default=1e-05,
                             help='The L2 regularization weight.')
-        return GeneralModel.parse_model_args(parser)
+
+        args, extras = parser.parse_known_args()
+        # Update the configs dictionary with the parsed arguments
+        configs['model']['embedding_size'] = args.embedding_size
+        configs['model']['gcn_layers'] = args.gcn_layers
+        configs['model']['reg_weight'] = args.reg_weight
+        return parser
 
     def __init__(self, corpus, configs):
         super().__init__(corpus, configs)
