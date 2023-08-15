@@ -26,7 +26,7 @@ runner:
   topk: '5,10,20,50'    # The number of items recommended to each user.
   metric: 'NDCG, HR'    # Evaluation metrics
   num_neg: 1            # sample one negative item while training
-  test_all: 0           # Whether testing on all the items
+  test_all: 1           # Whether testing on all the items. Default is yes.
 
 # Reader Settings
 reader:
