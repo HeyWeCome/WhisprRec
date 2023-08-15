@@ -22,7 +22,7 @@ class LightGCN(GeneralModel):
     def parse_model_args(parser, configs):
         parser.add_argument('--embedding_size', type=int, default=64,
                             help='Size of embedding vectors.')
-        parser.add_argument('--gcn_layers', type=int, default=3,
+        parser.add_argument('--gcn_layers', type=int, default=2,
                             help='Number of LightGCN layers.')
         parser.add_argument('--reg_weight', type=float, default=1e-05,
                             help='The L2 regularization weight.')
