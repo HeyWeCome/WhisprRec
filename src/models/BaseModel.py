@@ -180,11 +180,10 @@ class GeneralModel(BaseModel):
 
         # Sample negative items for all the instances
         def actions_before_epoch(self):
-            # 取数字在(1, self.corpus.n_items)之间，生成[len(self), self.model.num_neg]的形状
             neg_items = np.random.randint(1, self.corpus.n_items, size=(len(self), self.model.num_neg))
             for i, u in enumerate(self.data['user_id']):
-                clicked_set = self.corpus.train_clicked_set[u]  # neg items are possible to appear in dev/test set
-                # clicked_set = self.corpus.clicked_set[u]  # neg items will not include dev/test set
+                clicked_set = self.corpus.train_clicked_set[u]  # neg items will not include dev/test set
+                # clicked_set = self.corpus.residual_clicked_set[u]  # neg items are possible to appear in dev/test set
                 for j in range(self.model.num_neg):
                     while neg_items[i][j] in clicked_set:
                         neg_items[i][j] = np.random.randint(1, self.corpus.n_items)
