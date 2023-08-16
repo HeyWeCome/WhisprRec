@@ -137,8 +137,6 @@ class BaseModel(nn.Module):
 
 
 class GeneralModel(BaseModel):
-    reader, runner = 'BaseReader', 'BaseRunner'
-
     def __init__(self, corpus, configs):
         super().__init__(corpus, configs)
         self.user_num = corpus.n_users
