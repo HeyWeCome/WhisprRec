@@ -18,8 +18,8 @@ runner:
   early_stop: 10        # The number of epochs when dev results drop continuously
   lr: !!float 1e-3      # Learning rate
   l2: !!float 0         # Weight decay in optimizer
-  batch_size: 1024      # Batch size during training
-  eval_batch_size: 1024 # Batch size during testing
+  batch_size: 2056      # Batch size during training
+  eval_batch_size: 2056 # Batch size during testing
   optimizer: 'Adam'     # optimizer: SGD, Adam, Adagrad, Adadelta
   num_workers: 5        # Number of processors when prepare batches in DataLoader
   pin_memory: 0         # pin_memory in DataLoader
