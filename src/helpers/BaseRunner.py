@@ -214,9 +214,9 @@ class BaseRunner(object):
         return np.mean(loss_lst).item()
 
     def eval_termination(self, criterion: List[float]) -> bool:
-        if len(criterion) > 20 and utils.non_increasing(criterion[-self.early_stop:]):
+        if len(criterion) > self.early_stop and utils.non_increasing(criterion[-self.early_stop:]):
             return True
-        elif len(criterion) - criterion.index(max(criterion)) > 20:
+        elif len(criterion) - criterion.index(max(criterion)) > self.early_stop:
             return True
         return False
 
