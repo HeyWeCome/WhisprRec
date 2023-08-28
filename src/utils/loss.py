@@ -41,7 +41,8 @@ class BPRLoss(nn.Module):
 
 class NotToRecommendLoss(nn.Module):
     """Improved BPRLoss with negative user feedback
-
+    Learning from Negative User Feedback and Measuring Responsiveness for Sequential Recommenders
+    RecSys ’23
             Args:
                 - gamma(float): Small value to avoid division by zero
 
@@ -62,11 +63,13 @@ class NotToRecommendLoss(nn.Module):
     def __init__(self, gamma=1e-10):
         super(NotToRecommendLoss, self).__init__()
         self.gamma = gamma
+        self.pos_weight = nn.Parameter(torch.tensor(1.0))
+        self.neg_weight = nn.Parameter(torch.tensor(1.0))
 
-    def forward(self, pos_score, neg_score, pos_weight=1.0, neg_weight=1.0):
-        pos_loss = -pos_weight * torch.log(self.gamma + torch.sigmoid(pos_score)).mean()
-        neg_loss = -neg_weight * torch.log(self.gamma + (1 - torch.sigmoid(neg_score))).mean()
-        loss = pos_loss + neg_loss
+    def forward(self, pos_score, neg_score):
+        pos_loss = -torch.log(self.gamma + torch.sigmoid(pos_score)).mean()
+        neg_loss = -torch.log(1 - torch.sigmoid(neg_score) + self.gamma).mean()
+        loss = (self.pos_weight * pos_loss + self.neg_weight * neg_loss) / (self.pos_weight + self.neg_weight)
         return loss
 
 
