@@ -28,9 +28,9 @@ class BaseRunner(object):
                             help='Learning rate.')
         parser.add_argument('--l2', type=float, default=0,
                             help='Weight decay in optimizer.')
-        parser.add_argument('--batch_size', type=int, default=1024,
+        parser.add_argument('--batch_size', type=int, default=2048,
                             help='Batch size during training.')
-        parser.add_argument('--eval_batch_size', type=int, default=1024,
+        parser.add_argument('--eval_batch_size', type=int, default=4096,
                             help='Batch size during testing.')
         parser.add_argument('--optimizer', type=str, default='Adam',
                             help='optimizer: SGD, Adam, Adagrad, Adadelta')
@@ -38,10 +38,10 @@ class BaseRunner(object):
                             help='Number of processors when prepare batches in DataLoader')
         parser.add_argument('--pin_memory', type=int, default=0,
                             help='pin_memory in DataLoader')
-        parser.add_argument('--topk', type=str, default='5,10,20,50',
+        parser.add_argument('--topk', type=str, default='10,20',
                             help='The number of items recommended to each user.')
         parser.add_argument('--metric', type=str, default='NDCG, HR',
-                            help='metrics: NDCG, HR')
+                            help='metrics: NDCG, RECALL')
 
         args, extras = parser.parse_known_args()
 
