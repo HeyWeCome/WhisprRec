@@ -2,6 +2,10 @@ import os
 import pickle
 import argparse
 import logging
+from collections import defaultdict
+
+from typing import DefaultDict, Any, List
+
 import numpy as np
 import pandas as pd
 
@@ -43,9 +47,8 @@ class BaseReader(object):
                 else:
                     self.residual_clicked_set[uid].add(iid)
 
-    def _read_data(self) -> None:
-        logging.info('Reading data from \"{}\", dataset = \"{}\" '
-                     .format(self.prefix, self.dataset))
+    def _read_data(self):
+        logging.info("Reading data from %s, dataset = %s", self.prefix, self.dataset)
         # Use data_df to store training set, validation set and test set
         self.data_df = dict()
         for key in ['train', 'dev', 'test']:
@@ -83,6 +86,5 @@ class BaseReader(object):
         # Calculate density as interactions divided by total possible interactions
         density = n_interactions / (active_users * active_items)
 
-        logging.info('"# user": {}, "# item": {}, "# entry": {}, "# density": {}%'.format(
-            self.n_users - 1, self.n_items, len(self.all_df), density*100
-        ))
+        logging.info("# user: %d, # item: %d, # entry: %d, # density: %.2f%%",
+                     self.n_users - 1, self.n_items, len(self.all_df), density * 100)
