@@ -9,6 +9,7 @@
 import torch
 import torch.nn as nn
 
+
 class BPRLoss(nn.Module):
     """BPRLoss, based on Bayesian Personalized Ranking
 
@@ -35,6 +36,37 @@ class BPRLoss(nn.Module):
 
     def forward(self, pos_score, neg_score):
         loss = -torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
+        return loss
+
+
+class NotToRecommendLoss(nn.Module):
+    """Improved BPRLoss with negative user feedback
+
+            Args:
+                - gamma(float): Small value to avoid division by zero
+
+            Shape:
+                - Pos_score: (N)
+                - Neg_score: (N), same shape as the Pos_score
+                - Output: scalar.
+
+            Examples::
+
+                >>> loss = ImprovedBPRLoss()
+                >>> pos_score = torch.randn(3, requires_grad=True)
+                >>> neg_score = torch.randn(3, requires_grad=True)
+                >>> output = loss(pos_score, neg_score)
+                >>> output.backward()
+            """
+
+    def __init__(self, gamma=1e-10):
+        super(NotToRecommendLoss, self).__init__()
+        self.gamma = gamma
+
+    def forward(self, pos_score, neg_score, pos_weight=1.0, neg_weight=1.0):
+        pos_loss = -pos_weight * torch.log(self.gamma + torch.sigmoid(pos_score)).mean()
+        neg_loss = -neg_weight * torch.log(self.gamma + (1 - torch.sigmoid(neg_score))).mean()
+        loss = pos_loss + neg_loss
         return loss
 
 
