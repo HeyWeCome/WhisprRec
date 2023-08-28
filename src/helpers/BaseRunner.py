@@ -24,13 +24,13 @@ class BaseRunner(object):
                             help='Print test results every test_epoch (-1 means no print).')
         parser.add_argument('--early_stop', type=int, default=10,
                             help='The number of epochs when dev results drop continuously.')
-        parser.add_argument('--lr', type=float, default=1e-3,
+        parser.add_argument('--lr', type=float, default=5e-4,
                             help='Learning rate.')
         parser.add_argument('--l2', type=float, default=0,
                             help='Weight decay in optimizer.')
-        parser.add_argument('--batch_size', type=int, default=256,
+        parser.add_argument('--batch_size', type=int, default=1024,
                             help='Batch size during training.')
-        parser.add_argument('--eval_batch_size', type=int, default=256,
+        parser.add_argument('--eval_batch_size', type=int, default=1024,
                             help='Batch size during testing.')
         parser.add_argument('--optimizer', type=str, default='Adam',
                             help='optimizer: SGD, Adam, Adagrad, Adadelta')
@@ -207,7 +207,7 @@ class BaseRunner(object):
         for batch in tqdm(dl, leave=False, desc='Epoch {:<3}'.format(epoch), ncols=100, mininterval=1):
             batch = utils.batch_to_gpu(batch, model.device)
             model.optimizer.zero_grad()
-            loss = model.calculate_loss(batch)
+            loss = model.predict(batch)
             loss.backward()
             model.optimizer.step()
             loss_lst.append(loss.detach().cpu().data.numpy())
@@ -245,15 +245,17 @@ class BaseRunner(object):
                         collate_fn=dataset.collate_batch,
                         pin_memory=self.pin_memory)
         for batch in tqdm(dl, leave=False, ncols=100, mininterval=1, desc='Predict'):
-            pos_scores, neg_scores = dataset.model.predict(utils.batch_to_gpu(batch, dataset.model.device))
+            pos_scores, neg_scores = dataset.model.full_predict(utils.batch_to_gpu(batch, dataset.model.device))
             pos_scores_list.append(pos_scores)
             neg_scores_list.append(neg_scores)
 
-        pos_scores = torch.cat(pos_scores_list).detach()
-        neg_scores = torch.cat(neg_scores_list).detach()
+        pos_scores = torch.cat(pos_scores_list, dim=0).detach()
+        neg_scores = torch.cat(neg_scores_list, dim=0).detach()
 
+        # concat pos_scores and neg_scores. 2-D array.
         predictions = torch.cat([pos_scores.unsqueeze(1), neg_scores], dim=1).cpu().numpy()
 
+        # mask the score of item, which user have interacted, to -np.inf
         if dataset.model.test_all:
             rows, cols = list(), list()
             for i, u in enumerate(dataset.data['user_id']):

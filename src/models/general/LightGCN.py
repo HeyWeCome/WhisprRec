@@ -94,7 +94,6 @@ class LightGCN(GeneralModel):
 
             # Convert the COO matrix components to PyTorch tensors
             i = torch.LongTensor(np.array([row, col]))
-            # data_tensor = torch.FloatTensor(data)
             data_tensor = torch.from_numpy(data).float()
 
             # Create a sparse tensor using the COO matrix components and shape
@@ -158,8 +157,11 @@ class LightGCN(GeneralModel):
         neg_embeddings = item_all_embeddings[neg_items]
 
         # Calculate BPR Loss
-        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
-        neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
+        # pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
+        # neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
+        # Use sparse tensor operations for matrix multiplication
+        pos_scores = torch.sparse.mm(u_embeddings, pos_embeddings.t()).squeeze()
+        neg_scores = torch.sparse.mm(u_embeddings, neg_embeddings.t()).squeeze()
         mf_loss = self.mf_loss(pos_scores, neg_scores)
 
         # Calculate Emb loss
@@ -179,14 +181,45 @@ class LightGCN(GeneralModel):
         pos_item = feed_dict['pos_item']
         neg_item = feed_dict['neg_items']
 
+        user_e, pos_e = self.forward(user, pos_item)
+        neg_e = self.get_item_embedding(neg_item)
+
+        pos_item_score = torch.mul(user_e, pos_e).sum(dim=1)
+        neg_item_score = torch.mul(user_e, neg_e).sum(dim=1)
+        bpr_loss = BPRLoss()
+        loss = bpr_loss(pos_item_score, neg_item_score)
+        return loss
+
+    def predict(self, feed_dict):
+        user = feed_dict['user_id']
+        pos_item = feed_dict['pos_item']
+        neg_item = feed_dict['neg_items']
+
         user_all_embeddings, item_all_embeddings = self.forward(feed_dict)
 
-        u_embeddings = user_all_embeddings[user]
-        pos_embeddings = item_all_embeddings[pos_item]
-        neg_embeddings = item_all_embeddings[neg_item]
+        user_e = user_all_embeddings[user]
+        pos_e = item_all_embeddings[pos_item]
+        neg_e = item_all_embeddings[neg_item]
 
-        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
-        # expand the user embedding to match the shape of neg_items
-        user_e = u_embeddings.unsqueeze(1)  # (batch_size, 1, emb_size)
-        neg_scores = (user_e * neg_embeddings).sum(dim=-1)  # (batch_size, neg_item_num)
+        pos_item_score = torch.mul(user_e, pos_e).sum(dim=1)
+        neg_item_score = torch.mul(user_e, neg_e).sum(dim=1)
+
+        bpr_loss = BPRLoss()
+        loss = bpr_loss(pos_item_score, neg_item_score)
+
+        return loss
+
+    def full_predict(self, feed_dict):
+        user = feed_dict['user_id']
+        pos_item = feed_dict['pos_item']
+
+        user_all_embeddings, item_all_embeddings = self.forward(feed_dict)
+
+        user_e = user_all_embeddings[user]
+        pos_e = item_all_embeddings[pos_item]
+        neg_e = item_all_embeddings
+
+        pos_scores = (user_e * pos_e).sum(dim=-1)  # (batch_size,)
+        neg_scores = torch.matmul(user_e, neg_e.transpose(0, 1))  # (batch_size, neg_item_num)
+
         return pos_scores, neg_scores

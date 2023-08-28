@@ -66,7 +66,7 @@ class BPRMF(GeneralModel):
         item_e = self.get_item_embedding(item)
         return user_e, item_e
 
-    def calculate_loss(self, feed_dict):
+    def predict(self, feed_dict):
         user = feed_dict['user_id']
         pos_item = feed_dict['pos_item']
         neg_item = feed_dict['neg_items']
@@ -79,18 +79,16 @@ class BPRMF(GeneralModel):
         loss = bpr_loss(pos_item_score, neg_item_score)
         return loss
 
-    def predict(self, feed_dict):
+    def full_predict(self, feed_dict):
         user = feed_dict['user_id']
         pos_item = feed_dict['pos_item']
-        neg_item = feed_dict['neg_items']
 
         user_e = self.get_user_embedding(user)
         pos_e = self.get_item_embedding(pos_item)
-        neg_e = self.get_item_embedding(neg_item)
+        neg_e = self.item_embeddings.weight
 
         pos_scores = (user_e * pos_e).sum(dim=-1)  # (batch_size,)
         # expand the user embedding to match the shape of neg_items
-        user_e = user_e.unsqueeze(1)  # (batch_size, 1, emb_size)
-        neg_scores = (user_e * neg_e).sum(dim=-1)  # (batch_size, neg_item_num)
+        neg_scores = torch.matmul(user_e, neg_e.transpose(0, 1))  # (batch_size, neg_item_num)
 
         return pos_scores, neg_scores
