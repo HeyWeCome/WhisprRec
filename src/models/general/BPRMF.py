@@ -25,7 +25,6 @@ class BPRMF(GeneralModel):
         configs['model']['embedding_size'] = args.embedding_size
         return parser
 
-
     def __init__(self, corpus, configs):
         super().__init__(corpus, configs)
 
@@ -95,6 +94,3 @@ class BPRMF(GeneralModel):
         neg_scores = (user_e * neg_e).sum(dim=-1)  # (batch_size, neg_item_num)
 
         return pos_scores, neg_scores
-
-
-
