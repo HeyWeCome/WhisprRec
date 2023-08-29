@@ -40,7 +40,7 @@ class BaseRunner(object):
                             help='pin_memory in DataLoader')
         parser.add_argument('--topk', type=str, default='10,20',
                             help='The number of items recommended to each user.')
-        parser.add_argument('--metric', type=str, default='NDCG, RECALL',
+        parser.add_argument('--metric', type=str, default='RECALL, NDCG',
                             help='metrics: NDCG, RECALL')
 
         args, extras = parser.parse_known_args()
