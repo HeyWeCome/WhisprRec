@@ -139,8 +139,8 @@ class BaseModel(nn.Module):
 class GeneralModel(BaseModel):
     def __init__(self, corpus, configs):
         super().__init__(corpus, configs)
-        self.user_num = corpus.n_users
-        self.item_num = corpus.n_items
+        self.user_num = corpus.n_users + 1
+        self.item_num = corpus.n_items + 1
         self.num_neg = configs['runner']['num_neg']
         self.test_all = configs['runner']['test_all']
 

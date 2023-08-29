@@ -4,11 +4,11 @@ import torch
 import torch.nn as nn
 import logging
 import numpy as np
+
 from time import time
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from typing import Dict, List
-
 from utils import utils
 from models.BaseModel import BaseModel
 
@@ -78,28 +78,13 @@ class BaseRunner(object):
             hit = (gt_rank <= k)
             for metric in metrics:
                 key = '{}@{}'.format(metric, k)
-                if metric == 'HR':
+                if metric.lower() == 'hr':
                     evaluations[key] = hit.mean()
-                elif metric == 'NDCG':
+                elif metric.lower() == 'ndcg':
                     evaluations[key] = (hit / np.log2(gt_rank + 1)).mean()
-                elif metric == 'RECALL':
+                elif metric.lower() == 'recall':
                     # Recall
                     evaluations[key] = (gt_rank <= k).mean()
-                elif metric == 'PRECISION':
-                    # Precision@K
-                    num_users = len(gt_rank)
-                    precisions = []
-
-                    for i in range(num_users):
-                        pred_items = predictions[i][:k]
-                        rel_items = predictions[i][predictions[i] > 0]
-
-                        num_hit = len(set(pred_items) & set(rel_items))
-                        prec = num_hit / len(pred_items)
-
-                        precisions.append(prec)
-
-                    evaluations[key] = np.mean(precisions)
                 else:
                     raise ValueError('Undefined evaluation metric: {}.'.format(metric))
         return evaluations
