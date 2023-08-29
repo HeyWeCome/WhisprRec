@@ -70,10 +70,10 @@ class BaseReader(object):
             test_df = pd.read_csv(test_path, sep=self.sep)
         else:
             logging.info("Generating train, val and test dataset now···")
-            inter_file_path = os.path.join(data_path, 'ml-1m.inter')
+            inter_file_path = os.path.join(data_path, self.dataset+'.inter')
             try:
                 data_df = pd.read_csv(inter_file_path, sep='\t', header=0)
-                data_df = sample.count_statics(data_df)
+                data_df = sample.count_statics(data_df, self.dataset)
                 train_df, dev_df, test_df = sample.leave_one_out_split(data_df, save_path=data_path)
             except FileNotFoundError:
                 logging.error("Interactions file not found.")

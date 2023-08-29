@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 
-def count_statics(data_df):
+def count_statics(data_df, dataset):
     """
     Count Base statics of dataset, and reformat the name of columns.
     Args:
@@ -23,33 +23,38 @@ def count_statics(data_df):
     Returns:
         processed data_df
     """
-    renamed_columns = {
-        "user_id:token": "user_id",
-        "item_id:token": "item_id",
-        "rating:float": "rating",
-        "timestamp:float": "timestamp"
-    }
-    data_df.rename(columns=renamed_columns, inplace=True)
-    data_df.drop(columns=['rating'], inplace=True)
-    n_users = data_df['user_id'].value_counts().size
-    n_items = data_df['item_id'].value_counts().size
-    n_clicks = len(data_df)
-    min_time = data_df['timestamp'].min()
-    max_time = data_df['timestamp'].max()
-    # Calculate density as interactions divided by total possible interactions
-    density = n_clicks / (n_users * n_items)
+    if dataset == 'ml-1m' or dataset == 'ml-100k' or dataset == 'ml-10m':
+        renamed_columns = {
+            "user_id:token": "user_id",
+            "item_id:token": "item_id",
+            "rating:float": "rating",
+            "timestamp:float": "timestamp"
+        }
+        data_df.rename(columns=renamed_columns, inplace=True)
 
-    time_format = '%Y-%m-%d'
-    logging.info('# Users: %d', n_users)
-    logging.info('# Items: %d', n_items)
-    logging.info('# Interactions: %d', n_clicks)
-    logging.info('# density: %.2f%%:', density)
-    logging.info('Time Span: {}/{}'.format(
-        datetime.utcfromtimestamp(min_time).strftime(time_format),
-        datetime.utcfromtimestamp(max_time).strftime(time_format))
-    )
+        # Filter out interactions with rating less than 3
+        data_df = data_df[data_df['rating'] >= 3]
+        data_df.drop(columns=['rating'], inplace=True)
 
-    return data_df
+        n_users = data_df['user_id'].value_counts().size
+        n_items = data_df['item_id'].value_counts().size
+        n_clicks = len(data_df)
+        min_time = data_df['timestamp'].min()
+        max_time = data_df['timestamp'].max()
+        # Calculate density as interactions divided by total possible interactions
+        density = n_clicks / (n_users * n_items)
+
+        time_format = '%Y-%m-%d'
+        logging.info('# Users: %d', n_users)
+        logging.info('# Items: %d', n_items)
+        logging.info('# Interactions: %d', n_clicks)
+        logging.info('# density: %.2f%%:', density)
+        logging.info('Time Span: {}/{}'.format(
+            datetime.utcfromtimestamp(min_time).strftime(time_format),
+            datetime.utcfromtimestamp(max_time).strftime(time_format))
+        )
+
+        return data_df
 
 
 def leave_one_out_split(data_df, save_path):
