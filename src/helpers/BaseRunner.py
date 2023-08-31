@@ -234,19 +234,18 @@ class BaseRunner(object):
         pos_scores = torch.cat(pos_scores_list, dim=0).detach()
         neg_scores = torch.cat(neg_scores_list, dim=0).detach()
 
-        # concat pos_scores and neg_scores. 2-D array.
-        predictions = torch.cat([pos_scores.unsqueeze(1), neg_scores], dim=1).cpu().numpy()
-
         # mask the score of item, which user have interacted, to -np.inf
         if dataset.model.test_all:
             rows, cols = list(), list()
             for i, u in enumerate(dataset.data['user_id']):
                 clicked_items = list(dataset.corpus.train_clicked_set[u] | dataset.corpus.residual_clicked_set[u])
-                idx = list(np.ones_like(clicked_items) * i)
+                idx = np.full_like(clicked_items, i)
                 rows.extend(idx)
                 cols.extend(clicked_items)
-            predictions[rows, cols] = -np.inf
+            neg_scores[rows, cols] = -np.inf
 
+        # concat pos_scores and neg_scores. 2-D array.
+        predictions = torch.cat([pos_scores.unsqueeze(1), neg_scores], dim=1).cpu().numpy()
         return predictions
 
 
