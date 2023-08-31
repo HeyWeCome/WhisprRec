@@ -38,8 +38,8 @@ class LightGCN(GeneralModel):
         super().__init__(corpus, configs)
         self.emb_size = configs['model']['embedding_size']
         self.gcn_layers = configs['model']['gcn_layers']
-        self.n_users = corpus.n_users
-        self.n_items = corpus.n_items
+        self.n_users = corpus.n_users+1
+        self.n_items = corpus.n_items+1
         self.reg_weight = float(configs['model']['reg_weight'])
 
         # define layers and loss
@@ -47,8 +47,8 @@ class LightGCN(GeneralModel):
         self.item_embedding = nn.Embedding(self.n_items, self.emb_size)
         self.mf_loss = BPRLoss()
         self.reg_loss = EmbLoss()
-        self.norm_adj = self.build_adjmat(corpus.n_users+1,
-                                          corpus.n_items+1,
+        self.norm_adj = self.build_adjmat(self.n_users,
+                                          self.n_items,
                                           corpus.train_clicked_set,
                                           device=self.device)
         self.apply(xavier_uniform_initialization)
