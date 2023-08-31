@@ -1,3 +1,4 @@
+import math
 import os
 import gc
 import torch
@@ -81,7 +82,26 @@ class BaseRunner(object):
                 if metric.lower() == 'hr':
                     evaluations[key] = hit.mean()
                 elif metric.lower() == 'ndcg':
-                    evaluations[key] = (hit / np.log2(gt_rank + 1)).mean()
+                    sum_ndcg = 0
+
+                    for user_idx in range(predictions.shape[0]):
+                        user_data = predictions[user_idx]
+
+                        DCG = 0
+                        IDCG = 0
+
+                        for n in range(min(k, len(user_data))):
+                            if n == gt_rank[user_idx]:
+                                DCG += 1.0 / math.log(n + 2, 2)
+
+                            if n == 0:  # in your ideal ranking, the relevant item is the first one
+                                IDCG += 1.0 / math.log(n + 2, 2)
+
+                        if IDCG != 0:  # to avoid division by zero
+                            sum_ndcg += DCG / IDCG
+                    evaluations[key] = round(sum_ndcg / predictions.shape[0], 5)
+
+                    # evaluations[key] = (hit / np.log2(gt_rank + 1)).mean()
                 else:
                     raise ValueError('Undefined evaluation metric: {}.'.format(metric))
         return evaluations
