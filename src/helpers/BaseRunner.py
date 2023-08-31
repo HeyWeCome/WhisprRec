@@ -91,8 +91,8 @@ class BaseRunner(object):
                         IDCG = 0
 
                         for n in range(min(k, len(user_data))):
-                            if n == gt_rank[user_idx]:
-                                DCG += 1.0 / math.log(n + 2, 2)
+                            relevance = 1 if n == gt_rank[user_idx] else 0
+                            DCG += (2 ** relevance - 1) / math.log(n + 2, 2)
 
                             if n == 0:  # in your ideal ranking, the relevant item is the first one
                                 IDCG += 1.0 / math.log(n + 2, 2)
@@ -100,8 +100,6 @@ class BaseRunner(object):
                         if IDCG != 0:  # to avoid division by zero
                             sum_ndcg += DCG / IDCG
                     evaluations[key] = round(sum_ndcg / predictions.shape[0], 5)
-
-                    # evaluations[key] = (hit / np.log2(gt_rank + 1)).mean()
                 else:
                     raise ValueError('Undefined evaluation metric: {}.'.format(metric))
         return evaluations
