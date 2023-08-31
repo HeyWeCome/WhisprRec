@@ -47,8 +47,8 @@ class LightGCN(GeneralModel):
         self.item_embedding = nn.Embedding(self.n_items, self.emb_size)
         self.mf_loss = BPRLoss()
         self.reg_loss = EmbLoss()
-        self.norm_adj = self.build_adjmat(corpus.n_users,
-                                          corpus.n_items,
+        self.norm_adj = self.build_adjmat(corpus.n_users+1,
+                                          corpus.n_items+1,
                                           corpus.train_clicked_set,
                                           device=self.device)
         self.apply(xavier_uniform_initialization)
