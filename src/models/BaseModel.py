@@ -103,12 +103,14 @@ class BaseModel(nn.Module):
             # Iterate over keys in the dicts
             for key in feed_dicts[0]:
 
+                # Initialize for all cases
+                lengths = [len(d[key]) if isinstance(d[key], (list, np.ndarray)) else 1 for d in feed_dicts]
+
                 # Obtain a list of values for the key
                 values_list = [d[key] for d in feed_dicts]
 
                 # Check for numpy arrays and pad if their lengths are inconsistent
                 if isinstance(feed_dicts[0][key], np.ndarray):
-                    lengths = [len(d[key]) for d in feed_dicts]
                     if any(len != lengths[0] for len in lengths):
                         values_list = [d[key] for d in feed_dicts]
 
@@ -121,7 +123,7 @@ class BaseModel(nn.Module):
                 else:
                     feed_dict[key] = torch.from_numpy(stack_val)
 
-            # Add general elements to dict
+                # Add general elements to dict
             feed_dict['batch_size'] = len(feed_dicts)
             feed_dict['phase'] = self.phase
 
