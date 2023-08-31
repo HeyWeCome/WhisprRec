@@ -40,7 +40,7 @@ class BaseRunner(object):
                             help='pin_memory in DataLoader')
         parser.add_argument('--topk', type=str, default='10,20',
                             help='The number of items recommended to each user.')
-        parser.add_argument('--metric', type=str, default='RECALL, NDCG',
+        parser.add_argument('--metric', type=str, default='NDCG, HR',
                             help='metrics: NDCG, RECALL')
 
         args, extras = parser.parse_known_args()
@@ -82,9 +82,6 @@ class BaseRunner(object):
                     evaluations[key] = hit.mean()
                 elif metric.lower() == 'ndcg':
                     evaluations[key] = (hit / np.log2(gt_rank + 1)).mean()
-                elif metric.lower() == 'recall':
-                    # Recall
-                    evaluations[key] = (gt_rank <= k).mean()
                 else:
                     raise ValueError('Undefined evaluation metric: {}.'.format(metric))
         return evaluations
