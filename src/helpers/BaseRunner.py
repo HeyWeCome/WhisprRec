@@ -118,7 +118,7 @@ class BaseRunner(object):
     def _build_optimizer(self, model):
         logging.info('Optimizer: ' + self.optimizer_name)
         optimizer = eval('torch.optim.{}'.format(self.optimizer_name))(
-            model.customize_parameters(), lr=self.learning_rate, weight_decay=self.l2)
+            model.parameters(), lr=self.learning_rate, weight_decay=self.l2)
         return optimizer
 
     def train(self, data_dict: Dict[str, BaseModel.Dataset]):

@@ -27,12 +27,6 @@ class BaseModel(nn.Module):
         self.optimizer = None
         self.check_list = list()  # observe tensors in check_list every check_epoch
 
-    """
-    核心操作:每个模型自己定义
-    """
-    def _define_params(self):
-        pass
-
     def forward(self, feed_dict: dict) -> dict:
         """
         :param feed_dict: 数据集
@@ -42,20 +36,6 @@ class BaseModel(nn.Module):
 
     def loss(self, out_dict: dict) -> torch.Tensor:
         pass
-
-    """
-    辅助操作
-    """
-    def customize_parameters(self) -> list:
-        # customize optimizer settings for different parameters
-        weight_p, bias_p = [], []
-        for name, p in filter(lambda x: x[1].requires_grad, self.named_parameters()):
-            if 'bias' in name:
-                bias_p.append(p)
-            else:
-                weight_p.append(p)
-        optimize_dict = [{'params': weight_p}, {'params': bias_p, 'weight_decay': 0}]
-        return optimize_dict
 
     def save_model(self, model_path=None):
         if model_path is None:
@@ -117,22 +97,34 @@ class BaseModel(nn.Module):
 
         # Collate a batch according to the list of feed dicts
         def collate_batch(self, feed_dicts: List[dict]) -> dict:
+            # Initialize an empty dictionary
             feed_dict = dict()
+
+            # Iterate over keys in the dicts
             for key in feed_dicts[0]:
+
+                # Obtain a list of values for the key
+                values_list = [d[key] for d in feed_dicts]
+
+                # Check for numpy arrays and pad if their lengths are inconsistent
                 if isinstance(feed_dicts[0][key], np.ndarray):
-                    tmp_list = [len(d[key]) for d in feed_dicts]
-                    if any([tmp_list[0] != l for l in tmp_list]):
-                        stack_val = np.array([d[key] for d in feed_dicts], dtype=object)
-                    else:
-                        stack_val = np.array([d[key] for d in feed_dicts])
-                else:
-                    stack_val = np.array([d[key] for d in feed_dicts])
-                if stack_val.dtype == object:  # inconsistent length (e.g., history)
+                    lengths = [len(d[key]) for d in feed_dicts]
+                    if any(len != lengths[0] for len in lengths):
+                        values_list = [d[key] for d in feed_dicts]
+
+                # Convert values list to numpy array
+                stack_val = np.array(values_list, dtype=object if any(len != lengths[0] for len in lengths) else None)
+
+                # Convert numpy array to tensor and pad sequence if dtypes are objects or directly convert to tensor
+                if stack_val.dtype == object:
                     feed_dict[key] = pad_sequence([torch.from_numpy(x) for x in stack_val], batch_first=True)
                 else:
                     feed_dict[key] = torch.from_numpy(stack_val)
+
+            # Add general elements to dict
             feed_dict['batch_size'] = len(feed_dicts)
             feed_dict['phase'] = self.phase
+
             return feed_dict
 
 
@@ -164,14 +156,10 @@ class GeneralModel(BaseModel):
                 neg_items = np.arange(1, self.corpus.n_items)
             else:
                 neg_items = self.data['neg_items'][index]
-            # item_ids = np.concatenate([[target_item], neg_items]).astype(int)
-
-            pos_item = target_item
-            neg_items = neg_items
 
             feed_dict = {
                 'user_id': user_id,
-                'pos_item': pos_item,
+                'pos_item': target_item,
                 'neg_items': neg_items
             }
             return feed_dict
