@@ -52,33 +52,16 @@ class BaseReader(object):
 
     def _check_file(self):
         data_path = os.path.join(self.prefix, self.dataset)
-
-        train_path = os.path.join(data_path, 'train.csv')
-        val_path = os.path.join(data_path, 'dev.csv')
-        test_path = os.path.join(data_path, 'test.csv')
-
-        train_exists = os.path.exists(train_path)
-        val_exists = os.path.exists(val_path)
-        test_exists = os.path.exists(test_path)
-
-        # If all exist
-        if train_exists and val_exists and test_exists:
-            logging.info("train, val and test dataset have been generated. Loading now···")
-            # Read the CSV files into DataFrames
-            train_df = pd.read_csv(train_path, sep=self.sep)
-            dev_df = pd.read_csv(val_path, sep=self.sep)
-            test_df = pd.read_csv(test_path, sep=self.sep)
-        else:
-            logging.info("Generating train, val and test dataset now···")
-            inter_file_path = os.path.join(data_path, self.dataset+'.inter')
-            try:
-                data_df = pd.read_csv(inter_file_path, sep='\t', header=0)
-                data_df = sample.count_statics(data_df, self.dataset)
-                train_df, dev_df, test_df = sample.random_split(data_df, save_path=data_path)
-            except FileNotFoundError:
-                logging.error("Interactions file not found.")
-            except Exception as e:
-                logging.error(f"An error occurred while trying to read the interactions file: {e}")
+        logging.info("Generating train, val and test dataset now···")
+        inter_file_path = os.path.join(data_path, self.dataset+'.inter')
+        try:
+            data_df = pd.read_csv(inter_file_path, sep='\t', header=0)
+            data_df = sample.count_statics(data_df, self.dataset)
+            train_df, dev_df, test_df = sample.random_split(data_df, save_path=data_path)
+        except FileNotFoundError:
+            logging.error("Interactions file not found.")
+        except Exception as e:
+            logging.error(f"An error occurred while trying to read the interactions file: {e}")
 
         return train_df, dev_df, test_df
 
