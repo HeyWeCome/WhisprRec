@@ -8,11 +8,11 @@
 """
 import logging
 import os
-from datetime import datetime
-
 import numpy as np
 import pandas as pd
 
+from datetime import datetime
+from sklearn.model_selection import train_test_split
 
 def count_statics(data_df, dataset):
     """
@@ -101,34 +101,32 @@ def leave_one_out_split(data_df, save_path):
     return train_df, dev_df, test_df
 
 
-def random_split(data_df, save_path, split_ratios=[0.8, 0.1, 0.1]):
+def random_split(data_df, save_path, ratios=[0.8, 0.1, 0.1]):
     """
-    Splits the input DataFrame into train, dev, and test sets using a random split strategy.
+    Splits the input DataFrame into train, dev, and test sets randomly.
 
     Args:
         data_df (pd.DataFrame): The input DataFrame containing user interactions.
-        save_path: The path to save train, dev, and test sets.
-        split_ratios (list): A list of ratios for train, dev, and test sets.
+        save_path (str): The path to save train, dev and test sets.
+        ratios (list): The ratios to split train, dev and test sets. default: [0.8, 0.1, 0.1].
+
     Returns:
         train_df (pd.DataFrame): Training set.
         dev_df (pd.DataFrame): Development set.
         test_df (pd.DataFrame): Test set.
     """
-    # Shuffle the DataFrame rows randomly
-    shuffled_df = data_df.sample(frac=1, random_state=42).reset_index(drop=True)
 
-    total_samples = len(shuffled_df)
-    train_ratio, dev_ratio, test_ratio = split_ratios
+    assert sum(ratios) == 1.0, "ratios should sum to 1"
 
-    # Calculate the number of samples for each split
-    train_size = int(total_samples * train_ratio)
-    dev_size = int(total_samples * dev_ratio)
-    test_size = total_samples - train_size - dev_size
+    # Calculate train size
+    train_size = ratios[0]
 
-    # Split the shuffled DataFrame into train, dev, and test DataFrames
-    train_df = shuffled_df.iloc[:train_size]
-    dev_df = shuffled_df.iloc[train_size : train_size + dev_size]
-    test_df = shuffled_df.iloc[train_size + dev_size:]
+    # Calculate test and dev size
+    dev_test_size = ratios[1] / (ratios[1] + ratios[2])
+
+    # Split the data
+    train_df, test_dev_df = train_test_split(data_df, train_size=train_size, random_state=42, shuffle=True)
+    dev_df, test_df = train_test_split(test_dev_df, train_size=dev_test_size, random_state=42, shuffle=True)
 
     # Logging info
     logging.info("Dataset has been split. Train dataset length: %d, Dev dataset length: %d, Test dataset length: %d",
@@ -140,3 +138,4 @@ def random_split(data_df, save_path, split_ratios=[0.8, 0.1, 0.1]):
     test_df.to_csv(os.path.join(save_path, 'test.csv'), index=False, sep='\t')
 
     return train_df, dev_df, test_df
+
