@@ -99,3 +99,44 @@ def leave_one_out_split(data_df, save_path):
     test_df.to_csv(os.path.join(save_path, 'test.csv'), index=False, sep='\t')
 
     return train_df, dev_df, test_df
+
+
+def random_split(data_df, save_path, split_ratios=[0.8, 0.1, 0.1]):
+    """
+    Splits the input DataFrame into train, dev, and test sets using a random split strategy.
+
+    Args:
+        data_df (pd.DataFrame): The input DataFrame containing user interactions.
+        save_path: The path to save train, dev, and test sets.
+        split_ratios (list): A list of ratios for train, dev, and test sets.
+    Returns:
+        train_df (pd.DataFrame): Training set.
+        dev_df (pd.DataFrame): Development set.
+        test_df (pd.DataFrame): Test set.
+    """
+    # Shuffle the DataFrame rows randomly
+    shuffled_df = data_df.sample(frac=1, random_state=42).reset_index(drop=True)
+
+    total_samples = len(shuffled_df)
+    train_ratio, dev_ratio, test_ratio = split_ratios
+
+    # Calculate the number of samples for each split
+    train_size = int(total_samples * train_ratio)
+    dev_size = int(total_samples * dev_ratio)
+    test_size = total_samples - train_size - dev_size
+
+    # Split the shuffled DataFrame into train, dev, and test DataFrames
+    train_df = shuffled_df.iloc[:train_size]
+    dev_df = shuffled_df.iloc[train_size : train_size + dev_size]
+    test_df = shuffled_df.iloc[train_size + dev_size:]
+
+    # Logging info
+    logging.info("Dataset has been split. Train dataset length: %d, Dev dataset length: %d, Test dataset length: %d",
+                 len(train_df), len(dev_df), len(test_df))
+
+    # Save train, dev, and test sets to specified file paths
+    train_df.to_csv(os.path.join(save_path, 'train.csv'), index=False, sep='\t')
+    dev_df.to_csv(os.path.join(save_path, 'dev.csv'), index=False, sep='\t')
+    test_df.to_csv(os.path.join(save_path, 'test.csv'), index=False, sep='\t')
+
+    return train_df, dev_df, test_df

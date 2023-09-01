@@ -15,7 +15,7 @@ class BaseReader(object):
     @staticmethod
     def parse_reader_args(parser, configs):
         parser.add_argument('--path', type=str, default='../data/', help='Input data dir.')
-        parser.add_argument('--dataset', type=str, default='ml-1m', help='Choose a dataset.')
+        parser.add_argument('--dataset', type=str, default='ml-100k', help='Choose a dataset.')
         parser.add_argument('--sep', type=str, default='\t', help='sep of csv file.')
 
         args, extras = parser.parse_known_args()
@@ -74,7 +74,7 @@ class BaseReader(object):
             try:
                 data_df = pd.read_csv(inter_file_path, sep='\t', header=0)
                 data_df = sample.count_statics(data_df, self.dataset)
-                train_df, dev_df, test_df = sample.leave_one_out_split(data_df, save_path=data_path)
+                train_df, dev_df, test_df = sample.random_split(data_df, save_path=data_path)
             except FileNotFoundError:
                 logging.error("Interactions file not found.")
             except Exception as e:
