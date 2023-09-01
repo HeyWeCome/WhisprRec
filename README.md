@@ -27,12 +27,14 @@ cd WhisprRec/src
 
 4. Run your or build-in dataset
 ```bash
-python main.py --model_name BPRMF --emb_size 64 --lr 1e-3 --l2 1e-6 --dataset Food
+python main.py --model_name BPRMF --emb_size 64 --lr 1e-3 --l2 1e-6 --dataset ml-100k
 ```
 
 ## The Current Model List :owl:
-| Model    | HR@20 | NDCG@20 | Description |
-|----------|-------|---------|-------------|
-| BPRMF    |       |         |             |
-| LightGCN |       |         |             |
+In ml-100k dataset.
+
+| **Model**    | **HR@10** | **NDCG@10** | **Best hyper-parameters** | **Description** |
+|--------------|-----------|-------------|---------------------------|-----------------|
+| **BPRMF**    | 0.2217    | 0.1225      | lr=1e-3                   | UAI'09          |
+| **LightGCN** | 0.2281    | 0.1251      | lr=2e-3, gcn_layers=2     | SIGIR'20        |
 
