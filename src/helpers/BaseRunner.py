@@ -70,6 +70,18 @@ class BaseRunner(object):
         :param topk: top-K value list
         :param metrics: metric string list
         :return: a result dict, the keys are metric@topk
+        To compute the NDCG (Normalized Discounted Cumulative Gain) and Recall values,
+        we can iterate over the relevance thresholds in the same manner as we did for the hit-rate.
+        For NDCG@K, it's computed as:
+        ndcg = (1 / log2(rank + 1)) * hit
+        This is assuming you only have binary relevance (either an item is relevant or it isn't
+        - as is the case with implicit feedback).
+
+        The NDCG is then simply the mean of these values.
+        For recall@K, you need to divide the number of hits at rank K by the total number of relevant items.
+        Since we're dealing with implicit feedback where there's only one relevant item per row,
+        this is equivalent to hit@K:
+        recall = hit.
         """
         evaluations = dict()
         # The sort_idx contains the index values of the array values in descending order.
@@ -82,24 +94,22 @@ class BaseRunner(object):
                 if metric.lower() == 'hr':
                     evaluations[key] = hit.mean()
                 elif metric.lower() == 'ndcg':
-                    sum_ndcg = 0
-
-                    for user_idx in range(predictions.shape[0]):
-                        user_data = predictions[user_idx]
-
-                        DCG = 0
-                        IDCG = 0
-
-                        for n in range(min(k, len(user_data))):
-                            relevance = 1 if n == gt_rank[user_idx] else 0
-                            DCG += (2 ** relevance - 1) / math.log(n + 2, 2)
-
-                            if n == 0:  # in your ideal ranking, the relevant item is the first one
-                                IDCG += 1.0 / math.log(n + 2, 2)
-
-                        if IDCG != 0:  # to avoid division by zero
-                            sum_ndcg += DCG / IDCG
-                    evaluations[key] = round(sum_ndcg / predictions.shape[0], 5)
+                    # compute NDCG@k
+                    ndcg = (1 / np.log2(gt_rank + 1)) * hit
+                    evaluations[key] = ndcg.mean()
+                elif metric.lower() == 'recall':
+                    # compute recall@k
+                    # Since, there's only 1 relevant item for each row (implicit feedback)
+                    # hit rate at rank K is equivalent to recall at rank K
+                    evaluations[key] = hit.mean()
+                elif metric.lower() == 'mrr':
+                    # compute MRR
+                    reciprocal_rank = 1 / gt_rank
+                    evaluations[key] = reciprocal_rank.mean()
+                elif metric.lower() == 'precision':
+                    # compute Precision@k
+                    precision = hit.sum() / (len(hit) * k)
+                    evaluations[key] = precision
                 else:
                     raise ValueError('Undefined evaluation metric: {}.'.format(metric))
         return evaluations
