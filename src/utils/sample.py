@@ -98,9 +98,9 @@ def leave_one_out_split(data_df, save_path):
                  len(train_df), len(dev_df), len(test_df))
 
     # Save train, dev, and test sets to specified file paths
-    train_df.to_csv(os.path.join(save_path, 'train.csv'), index=False, sep='\t')
-    dev_df.to_csv(os.path.join(save_path, 'dev.csv'), index=False, sep='\t')
-    test_df.to_csv(os.path.join(save_path, 'test.csv'), index=False, sep='\t')
+    # train_df.to_csv(os.path.join(save_path, 'train.csv'), index=False, sep='\t')
+    # dev_df.to_csv(os.path.join(save_path, 'dev.csv'), index=False, sep='\t')
+    # test_df.to_csv(os.path.join(save_path, 'test.csv'), index=False, sep='\t')
 
     return train_df, dev_df, test_df
 
@@ -137,9 +137,9 @@ def random_split(data_df, save_path, ratios=[0.8, 0.1, 0.1]):
                  len(train_df), len(dev_df), len(test_df))
 
     # Save train, dev, and test sets to specified file paths
-    train_df.to_csv(os.path.join(save_path, 'train.csv'), index=False, sep='\t')
-    dev_df.to_csv(os.path.join(save_path, 'dev.csv'), index=False, sep='\t')
-    test_df.to_csv(os.path.join(save_path, 'test.csv'), index=False, sep='\t')
+    # train_df.to_csv(os.path.join(save_path, 'train.csv'), index=False, sep='\t')
+    # dev_df.to_csv(os.path.join(save_path, 'dev.csv'), index=False, sep='\t')
+    # test_df.to_csv(os.path.join(save_path, 'test.csv'), index=False, sep='\t')
 
     return train_df, dev_df, test_df
 
