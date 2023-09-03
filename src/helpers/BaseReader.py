@@ -85,6 +85,8 @@ class BaseReader(object):
         # Get dataset stats
         self.n_users = self.all_df['user_id'].max()
         self.n_items = self.all_df['item_id'].max()
+        self.all_user = self.all_df['user_id']
+        self.all_item = self.all_df['item_id']
 
 
 if __name__ == '__main__':
