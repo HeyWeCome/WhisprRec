@@ -148,7 +148,7 @@ class LightGCN(GeneralModel):
         )
         return user_all_embeddings, item_all_embeddings
 
-    def calculate_loss(self, feed_dict):
+    def predict(self, feed_dict):
         user = feed_dict['user_id']
         pos_item = feed_dict['pos_item']
         neg_items = feed_dict['neg_items']
@@ -177,39 +177,6 @@ class LightGCN(GeneralModel):
         )
 
         return mf_loss + self.reg_weight * reg_loss
-
-    def predict(self, feed_dict):
-        user = feed_dict['user_id']
-        pos_item = feed_dict['pos_item']
-        neg_item = feed_dict['neg_items']
-
-        user_e, pos_e = self.forward(user, pos_item)
-        neg_e = self.get_item_embedding(neg_item)
-
-        pos_item_score = torch.mul(user_e, pos_e).sum(dim=1)
-        neg_item_score = torch.mul(user_e, neg_e).sum(dim=1)
-        bpr_loss = BPRLoss()
-        loss = bpr_loss(pos_item_score, neg_item_score)
-        return loss
-
-    def predict(self, feed_dict):
-        user = feed_dict['user_id']
-        pos_item = feed_dict['pos_item']
-        neg_item = feed_dict['neg_items']
-
-        user_all_embeddings, item_all_embeddings = self.forward()
-
-        user_e = user_all_embeddings[user]
-        pos_e = item_all_embeddings[pos_item]
-        neg_e = item_all_embeddings[neg_item]
-
-        pos_item_score = torch.mul(user_e, pos_e).sum(dim=1)
-        neg_item_score = torch.mul(user_e, neg_e).sum(dim=1)
-
-        bpr_loss = BPRLoss()
-        loss = bpr_loss(pos_item_score, neg_item_score)
-
-        return loss
 
     def full_predict(self, feed_dict):
         user = feed_dict['user_id']
