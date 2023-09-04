@@ -132,7 +132,7 @@ class LightGCN(GeneralModel):
         ego_embeddings = torch.cat([user_embeddings, item_embeddings], dim=0)
         return ego_embeddings
 
-    def forward(self, feed_dict):
+    def forward(self):
         ego_embeddings = self.get_ego_embeddings().to(self.device)  # [n_items+n_users, embedding_dim]
         embedding_list = [ego_embeddings]
 
@@ -153,7 +153,7 @@ class LightGCN(GeneralModel):
         pos_item = feed_dict['pos_item']
         neg_items = feed_dict['neg_items']
 
-        user_all_embeddings, item_all_embeddings = self.forward(feed_dict)
+        user_all_embeddings, item_all_embeddings = self.forward()
         u_embeddings = user_all_embeddings[user]
         pos_embeddings = item_all_embeddings[pos_item]
         neg_embeddings = item_all_embeddings[neg_items]
@@ -197,7 +197,7 @@ class LightGCN(GeneralModel):
         pos_item = feed_dict['pos_item']
         neg_item = feed_dict['neg_items']
 
-        user_all_embeddings, item_all_embeddings = self.forward(feed_dict)
+        user_all_embeddings, item_all_embeddings = self.forward()
 
         user_e = user_all_embeddings[user]
         pos_e = item_all_embeddings[pos_item]
@@ -215,7 +215,7 @@ class LightGCN(GeneralModel):
         user = feed_dict['user_id']
         pos_item = feed_dict['pos_item']
 
-        user_all_embeddings, item_all_embeddings = self.forward(feed_dict)
+        user_all_embeddings, item_all_embeddings = self.forward()
 
         user_e = user_all_embeddings[user]
         pos_e = item_all_embeddings[pos_item]
