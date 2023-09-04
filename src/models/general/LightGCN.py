@@ -159,11 +159,8 @@ class LightGCN(GeneralModel):
         neg_embeddings = item_all_embeddings[neg_items]
 
         # Calculate BPR Loss
-        # pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
-        # neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
-        # Use sparse tensor operations for matrix multiplication
-        pos_scores = torch.sparse.mm(u_embeddings, pos_embeddings.t()).squeeze()
-        neg_scores = torch.sparse.mm(u_embeddings, neg_embeddings.t()).squeeze()
+        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)
 
         # Calculate Emb loss
