@@ -33,10 +33,10 @@ python main.py --model_name BPRMF --emb_size 64 --lr 1e-3 --l2 1e-6 --dataset ml
 ## The Current Model List :owl:
 In ml-100k dataset.
 
-| **Model**    | **HR@10** | **NDCG@10** | **Best hyper-parameters**                                                          | **Description** |
-|--------------|-----------|-------------|------------------------------------------------------------------------------------|-----------------|
-| **BPRMF**    | 0.2217    | 0.1225      | lr=1e-3                                                                            | UAI'09          |
-| **LightGCN** | 0.2281    | 0.1251      | lr=2e-3, gcn_layers=2                                                              | SIGIR'20        |
-| **SGL**      | 0.2306    | 0.1267      | lr=2e-3, gcn_layers=2, ssl_tau=0.5, --drop_ratio=0.1, --type=ED,--ssl_weight=0.001 | SIGIR’21        |
+| **Model**    | **HR@10** | **NDCG@10** | **Best hyper-parameters**                                                     | **Description** |
+|--------------|-----------|-------------|-------------------------------------------------------------------------------|-----------------|
+| **BPRMF**    | 0.2217    | 0.1225      | lr=1e-3                                                                       | UAI'09          |
+| **LightGCN** | 0.2281    | 0.1251      | lr=2e-3, gcn_layers=2                                                         | SIGIR'20        |
+| **SGL**      | 0.2306    | 0.1267      | lr=2e-3, gcn_layers=2, ssl_tau=0.5, drop_ratio=0.1, type=ED, ssl_weight=0.001 | SIGIR’21        |
 
 
