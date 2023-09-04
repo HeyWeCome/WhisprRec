@@ -47,10 +47,10 @@ class LightGCN(GeneralModel):
         self.item_embedding = nn.Embedding(self.n_items, self.emb_size)
         self.mf_loss = BPRLoss()
         self.reg_loss = EmbLoss()
-        self.norm_adj = self.build_adjmat(self.n_users,
+        self.norm_adj = self.csr2tensor(self.build_adjmat(self.n_users,
                                           self.n_items,
                                           corpus.train_clicked_set,
-                                          device=self.device)
+                                          device=self.device))
         self.apply(xavier_uniform_initialization)
 
     @staticmethod
@@ -71,52 +71,55 @@ class LightGCN(GeneralModel):
         adj_mat[user_count:, :user_count] = R.T
         adj_mat = adj_mat.todok()
 
-        # Define a function to normalize the adjacency matrix
-        def normalized_adj_single(adj):
-            # Calculate the sum of interactions for each node (user/item)
-            rowsum = np.array(adj.sum(1)) + 1e-10
-
-            # Calculate the inverse square root of the rowsum for diagonal matrix D^-0.5
-            d_inv_sqrt = np.power(rowsum, -0.5).flatten()
-            d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
-            d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
-
-            # Calculate the bi-Laplacian normalized adjacency matrix: D^-0.5 * A * D^-0.5
-            bi_lap = d_mat_inv_sqrt.dot(adj).dot(d_mat_inv_sqrt)
-
-            # Convert the bi-Laplacian normalized adjacency matrix to COO format
-            coo_bi_lap = bi_lap.tocoo()
-
-            # Extract the COO matrix components
-            row = coo_bi_lap.row  # Row indices of non-zero elements
-            col = coo_bi_lap.col  # Column indices of non-zero elements
-            data = coo_bi_lap.data  # Values of non-zero elements
-
-            # Convert the COO matrix components to PyTorch tensors
-            i = torch.LongTensor(np.array([row, col]))
-            data_tensor = torch.from_numpy(data).float()
-
-            # Create a sparse tensor using the COO matrix components and shape
-            sparse_bi_lap = torch.sparse.FloatTensor(i, data_tensor, torch.Size(coo_bi_lap.shape))
-
-            return sparse_bi_lap
-
         if selfloop_flag:
             # If selfloop_flag is True, add self-loops and then normalize
             # This is useful for improving stability and connectivity in certain algorithms
-            adj_mat_with_selfloop = adj_mat + sp.eye(adj_mat.shape[0])
-            norm_adj_mat = normalized_adj_single(adj_mat_with_selfloop)
-        else:
-            # If selfloop_flag is False, normalize the original adjacency matrix
-            norm_adj_mat = normalized_adj_single(adj_mat)
+            adj_mat = adj_mat + sp.eye(adj_mat.shape[0])
+        return adj_mat
 
-        if device == 'cuda':
+
+    def csr2tensor(self, matrix):
+        """
+        Convert csr_matrix to tensor.
+        Args:
+            matrix: Sparse matrix to be converted.
+
+        Returns:
+            torch.sparse.FloatTensor: Transformed sparse matrix.
+        """
+        # Calculate the sum of interactions for each node (user/item)
+        rowsum = np.array(matrix.sum(1)) + 1e-10
+
+        # Calculate the inverse square root of the rowsum for diagonal matrix D^-0.5
+        d_inv_sqrt = np.power(rowsum, -0.5).flatten()
+        d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
+        d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
+
+        # Calculate the bi-Laplacian normalized adjacency matrix: D^-0.5 * A * D^-0.5
+        bi_lap = d_mat_inv_sqrt.dot(matrix).dot(d_mat_inv_sqrt)
+
+        # Convert the bi-Laplacian normalized adjacency matrix to COO format
+        coo_bi_lap = bi_lap.tocoo()
+
+        # Extract the COO matrix components
+        row = coo_bi_lap.row  # Row indices of non-zero elements
+        col = coo_bi_lap.col  # Column indices of non-zero elements
+        data = coo_bi_lap.data  # Values of non-zero elements
+
+        # Convert the COO matrix components to PyTorch tensors
+        i = torch.LongTensor(np.array([row, col]))
+        data_tensor = torch.from_numpy(data).float()
+
+        # Create a sparse tensor using the COO matrix components and shape
+        sparse_bi_lap = torch.sparse.FloatTensor(i, data_tensor, torch.Size(coo_bi_lap.shape))
+
+        if self.device == 'cuda':
             # If the device is not 'cpu', move the tensor to the specified device
             # Return the normalized adjacency matrix as a PyTorch sparse tensor
-            norm_adj_mat = norm_adj_mat.to(device)
+            norm_adj_mat = sparse_bi_lap.to(self.device)
             return norm_adj_mat
         else:
-            norm_adj_mat = norm_adj_mat.to_dense().to(device)
+            norm_adj_mat = sparse_bi_lap.to_dense().to(self.device)
             return norm_adj_mat
 
     def get_ego_embeddings(self):
