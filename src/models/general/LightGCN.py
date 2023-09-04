@@ -48,13 +48,12 @@ class LightGCN(GeneralModel):
         self.mf_loss = BPRLoss()
         self.reg_loss = EmbLoss()
         self.norm_adj = self.csr2tensor(self.build_adjmat(self.n_users,
-                                          self.n_items,
-                                          corpus.train_clicked_set,
-                                          device=self.device))
+                                                          self.n_items,
+                                                          corpus.train_clicked_set))
         self.apply(xavier_uniform_initialization)
 
     @staticmethod
-    def build_adjmat(user_count, item_count, train_mat, device, selfloop_flag=False):
+    def build_adjmat(user_count, item_count, train_mat, selfloop_flag=False):
         # Construct a binary user-item interaction matrix R
         R = sp.dok_matrix((user_count, item_count), dtype=np.float32)
         for user in train_mat:
