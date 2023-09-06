@@ -9,28 +9,52 @@ from helpers.BaseReader import BaseReader
 class SeqReader(BaseReader):
     def __init__(self, args):
         super().__init__(args)
-        self._append_his_info()
+        self._append_user_history_info()
 
-    def _append_his_info(self):
+    def _append_user_history_info(self):
         """
-        self.user_his: store user history sequence [(i1,t1), (i1,t2), ...]
-        add the 'position' of each interaction in user_his to data_df
+        Add the position of each interaction in the user's history to the data DataFrame.
         """
-        logging.info('添加用户历史信息中...')
-        # 按照time 和 user_id进行升序排序，排序方式用归并排序
-        # 可以使用快速排序、归并排序与堆排序
-        # 鉴于归并的时间复杂度很稳定，所以选择归并排序：mergesort
-        sort_df = self.all_df.sort_values(by=['time', 'user_id'], kind='mergesort')
-        position = list()
-        self.user_his = dict()  # 存储每个用户的已见序列
-        for uid, iid, t in zip(sort_df['user_id'], sort_df['item_id'], sort_df['time']):
-            if uid not in self.user_his:
-                self.user_his[uid] = list()
-            position.append(len(self.user_his[uid]))
-            self.user_his[uid].append((iid, t))
-        sort_df['position'] = position
+        logging.info('Adding user history information...')
+
+        # Sort the DataFrame by time and user ID in ascending order using merge sort.
+        sorted_df = self.all_df.sort_values(by=['timestamp', 'user_id'], kind='mergesort')
+
+        # Initialize a dictionary to store each user's interaction history.
+        self.user_his = {}
+
+        # Initialize an empty list to store interaction positions.
+        positions = []
+
+        # Iterate through sorted interactions and update user history and positions.
+        for user_id, item_id, time in zip(sorted_df['user_id'], sorted_df['item_id'], sorted_df['timestamp']):
+            if user_id not in self.user_his:
+                self.user_his[user_id] = []
+            positions.append(len(self.user_his[user_id]))
+            self.user_his[user_id].append((item_id, time))
+
+        # Add a 'position' column to the sorted DataFrame.
+        sorted_df['position'] = positions
+
+        # Merge the sorted DataFrame with the data DataFrame for train, dev, and test.
         for key in ['train', 'dev', 'test']:
             self.data_df[key] = pd.merge(
-                left=self.data_df[key], right=sort_df, how='left',
+                left=self.data_df[key], right=sorted_df, how='left',
                 on=['user_id', 'item_id', 'time'])
-        del sort_df
+
+        # Clean up by deleting the sorted DataFrame.
+        del sorted_df
+
+
+if __name__ == '__main__':
+    # init overall configs
+    configs = dict()
+    configs.update({'model': {}})
+    configs.update({'runner': {}})
+    configs.update({'reader': {}})
+
+    configs['reader']['sep'] = '\t'
+    configs['reader']['path'] = '../../data/'
+    configs['reader']['dataset'] = 'ml-100k'
+
+    reader = SeqReader(configs)
