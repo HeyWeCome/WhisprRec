@@ -50,8 +50,8 @@ class SGL(GeneralModel):
         super().__init__(corpus, configs)
         self.emb_size = configs['model']['embedding_size']
         self.gcn_layers = int(configs['model']['gcn_layers'])
-        self.n_users = corpus.n_users+1
-        self.n_items = corpus.n_items+1
+        self.n_users = corpus.n_users
+        self.n_items = corpus.n_items
         self.reg_weight = float(configs['model']['reg_weight'])
         self.type = str(configs['model']['type'])
         self.ssl_weight = configs['model']['ssl_weight']

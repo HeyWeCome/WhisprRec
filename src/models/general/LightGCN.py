@@ -38,8 +38,8 @@ class LightGCN(GeneralModel):
         super().__init__(corpus, configs)
         self.emb_size = configs['model']['embedding_size']
         self.gcn_layers = configs['model']['gcn_layers']
-        self.n_users = corpus.n_users+1
-        self.n_items = corpus.n_items+1
+        self.n_users = corpus.n_users
+        self.n_items = corpus.n_items
         self.reg_weight = float(configs['model']['reg_weight'])
 
         # define layers and loss

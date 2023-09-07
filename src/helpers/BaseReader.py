@@ -17,6 +17,7 @@ class BaseReader(object):
         parser.add_argument('--path', type=str, default='../data/', help='Input data dir.')
         parser.add_argument('--dataset', type=str, default='ml-100k', help='Choose a dataset.')
         parser.add_argument('--sep', type=str, default='\t', help='sep of csv file.')
+        parser.add_argument('--sample', type=str, default='random', help='random or leave one out')
 
         args, extras = parser.parse_known_args()
 
@@ -24,6 +25,7 @@ class BaseReader(object):
         configs['reader']['path'] = args.path
         configs['reader']['dataset'] = args.dataset
         configs['reader']['sep'] = args.sep
+        configs['reader']['sample'] = args.sample
 
         return parser
 
@@ -31,6 +33,7 @@ class BaseReader(object):
         self.sep = configs['reader']['sep']
         self.prefix = configs['reader']['path']
         self.dataset = configs['reader']['dataset']
+        self.sample = configs['reader']['sample']
 
         # check whether train, val and test dataset have been generated
         train_df, dev_df, test_df = self._check_file()
@@ -57,7 +60,10 @@ class BaseReader(object):
         try:
             data_df = pd.read_csv(inter_file_path, sep='\t', header=0)
             data_df = sample.count_statics(data_df, self.dataset)
-            train_df, dev_df, test_df = sample.random_split(data_df, save_path=data_path)
+            if self.sample == 'random':
+                train_df, dev_df, test_df = sample.random_split(data_df, save_path=data_path)
+            else:
+                train_df, dev_df, test_df = sample.leave_one_out_split(data_df, save_path=data_path)
         except FileNotFoundError:
             logging.error("Interactions file not found.")
         except Exception as e:
@@ -83,10 +89,8 @@ class BaseReader(object):
         self.all_df = self.all_df.drop_duplicates(['user_id', 'item_id'])
 
         # Get dataset stats
-        self.n_users = self.all_df['user_id'].max()
-        self.n_items = self.all_df['item_id'].max()
-        self.all_user = self.all_df['user_id']
-        self.all_item = self.all_df['item_id']
+        self.n_users = self.all_df['user_id'].max() + 1
+        self.n_items = self.all_df['item_id'].max() + 1
 
 
 if __name__ == '__main__':
