@@ -4,7 +4,7 @@
 @File       ：BUIR.py
 @Author     ：Heywecome
 @Date       ：2023/9/7 09:54 
-@Description：todo
+@Description：This model's performance is not as good as reported
 """
 import torch
 import torch.nn as nn
@@ -109,7 +109,7 @@ class BUIR(GeneralModel):
 
         # expand the user embedding to match the shape of neg_items
         user_predictor = self.predictor(user_e)  # Apply the linear layer to user_e
-        item_weights = self.predictor(self.item_online.weight).transpose(0,
-                                                                         1)  # Apply the linear layer to item_online.weight
+        # Apply the linear layer to item_online.weight
+        item_weights = self.predictor(self.item_online.weight).transpose(0, 1)
         all_scores = torch.matmul(user_e, item_weights) + torch.matmul(user_predictor, all_item_e.transpose(0, 1))
         return pos_scores, all_scores
