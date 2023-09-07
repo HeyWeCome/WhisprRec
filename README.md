@@ -35,8 +35,10 @@ In ml-100k dataset.
 
 | **Model**    | **HR@10** | **NDCG@10** | **Best hyper-parameters**                                                     | **Description** |
 |--------------|-----------|-------------|-------------------------------------------------------------------------------|-----------------|
+| **BUIR**     | 0.1114    | 0.0626      | lr=5e-4                                                                       | SIGIR'21        |
 | **BPRMF**    | 0.2217    | 0.1225      | lr=1e-3                                                                       | UAI'09          |
 | **LightGCN** | 0.2281    | 0.1251      | lr=2e-3, gcn_layers=2                                                         | SIGIR'20        |
 | **SGL**      | 0.2306    | 0.1267      | lr=2e-3, gcn_layers=2, ssl_tau=0.5, drop_ratio=0.1, type=ED, ssl_weight=0.001 | SIGIR’21        |
+
 
 
