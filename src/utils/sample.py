@@ -36,6 +36,17 @@ def count_statics(data_df, dataset):
         data_df = data_df[data_df['rating'] >= 4]
         data_df.drop(columns=['rating'], inplace=True)
     elif dataset == "yelp":
+        # Create a mapping of unique user and item IDs to sequential integers
+        unique_users = data_df['user_id'].unique()
+        user_id_mapping = {user_id: idx + 1 for idx, user_id in enumerate(unique_users)}
+
+        unique_items = data_df['item_id'].unique()
+        item_id_mapping = {item_id: idx + 1 for idx, item_id in enumerate(unique_items)}
+
+        # Replace user and item IDs with sequential integers
+        data_df['user_id'] = data_df['user_id'].map(user_id_mapping)
+        data_df['item_id'] = data_df['item_id'].map(item_id_mapping)
+
         # Filter out interactions with rating less than 4 because dataset is very large.
         data_df = data_df[data_df['rating'] >= 4]
         data_df.drop(columns=['rating'], inplace=True)
