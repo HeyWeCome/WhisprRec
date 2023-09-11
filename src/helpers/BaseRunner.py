@@ -257,7 +257,7 @@ class BaseRunner(object):
                         pin_memory=self.pin_memory)
         for batch in tqdm(dl, leave=False, desc='Predict:', ncols=100, mininterval=1):
             batch = utils.batch_to_gpu(batch, model.device)
-            pos_scores, scores = model.full_predict(batch)
+            scores = model.full_predict(batch)
             target_scores = scores[torch.arange(len(batch['pos_item'])), batch['pos_item']]
             target_scores_list.append(target_scores)
             scores_list.append(scores)
