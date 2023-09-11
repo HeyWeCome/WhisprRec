@@ -157,7 +157,7 @@ def parse_config(config):
 
 if __name__ == '__main__':
     init_parser = argparse.ArgumentParser(description='Model')
-    init_parser.add_argument('--model_name', type=str, default='BUIR', help='Choose a model to run.')
+    init_parser.add_argument('--model_name', type=str, default='BPRMF', help='Choose a model to run.')
     init_args, init_extras = init_parser.parse_known_args()
 
     # init overall configs
