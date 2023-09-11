@@ -81,7 +81,7 @@ def main(configs):
     data_dict = dict()
     for phase in ['train', 'dev', 'test']:
         data_dict[phase] = model_name.Dataset(model, corpus, phase)
-        data_dict[phase].prepare()
+        # data_dict[phase].prepare()
     runner = runner_name(configs)
     # logging.info('Test Before Training: ' + runner.print_res(data_dict['test']))
     if configs['load'] > 0:
