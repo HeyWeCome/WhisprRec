@@ -35,8 +35,8 @@ def count_statics(data_df, dataset):
     data_df = data_df[data_df['user_id'].isin(user_counts[user_counts >= 5].index)]
 
     # Create a mapping of unique user and item IDs to sequential integers
-    user_id_map = {id: i for i, idx in enumerate(data_df['user_id'].unique())}
-    item_id_map = {id: i for i, idx in enumerate(data_df['item_id'].unique())}
+    user_id_map = {id: i for i, id in enumerate(data_df['user_id'].unique())}
+    item_id_map = {id: i for i, id in enumerate(data_df['item_id'].unique())}
     data_df['user_id'] = data_df['user_id'].map(user_id_map)
     data_df['item_id'] = data_df['item_id'].map(item_id_map)
 
@@ -45,7 +45,7 @@ def count_statics(data_df, dataset):
         data_df = data_df.loc[data_df['rating'] >= 3].copy()  # Make a copy of the filtered DataFrame
         data_df.drop(columns=['rating'], inplace=True)
     elif dataset == "yelp" or dataset == "food":
-        # Filter out interactions with rating less than 3
+        # Filter out interactions with rating less than 3 because dataset is very large.
         data_df = data_df.loc[data_df['rating'] >= 3].copy()
         data_df.drop(columns=['rating'], inplace=True)
 
