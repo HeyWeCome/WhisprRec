@@ -35,7 +35,7 @@ def count_statics(data_df, dataset):
         # Filter out interactions with rating less than 4
         data_df = data_df[data_df['rating'] >= 4]
         data_df.drop(columns=['rating'], inplace=True)
-    elif dataset == "yelp":
+    elif dataset == "yelp" or dataset == "food":
         # Create a mapping of unique user and item IDs to sequential integers
         unique_users = data_df['user_id'].unique()
         user_id_mapping = {user_id: idx + 1 for idx, user_id in enumerate(unique_users)}
@@ -51,6 +51,10 @@ def count_statics(data_df, dataset):
         data_df = data_df[data_df['rating'] >= 4]
         data_df.drop(columns=['rating'], inplace=True)
 
+    # Filter out users with less than 20 occurrences
+    user_counts = data_df['user_id'].value_counts()
+    data_df = data_df[data_df['user_id'].isin(user_counts[user_counts >= 30].index)]
+
     n_users = data_df['user_id'].value_counts().size
     n_items = data_df['item_id'].value_counts().size
     n_clicks = len(data_df)
@@ -63,7 +67,7 @@ def count_statics(data_df, dataset):
     logging.info('# Users: %d', n_users)
     logging.info('# Items: %d', n_items)
     logging.info('# Interactions: %d', n_clicks)
-    logging.info('# density: %.2f%%', density)
+    logging.info('# density: %.8f%%', density)
     logging.info('Time Span: {}/{}'.format(
         datetime.utcfromtimestamp(min_time).strftime(time_format),
         datetime.utcfromtimestamp(max_time).strftime(time_format))
