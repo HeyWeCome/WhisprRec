@@ -177,15 +177,12 @@ class LightGCN(GeneralModel):
 
     def full_predict(self, feed_dict):
         user = feed_dict['user_id']
-        pos_item = feed_dict['pos_item']
 
         user_all_embeddings, item_all_embeddings = self.forward()
 
         user_e = user_all_embeddings[user]
-        pos_e = item_all_embeddings[pos_item]
-        neg_e = item_all_embeddings
+        all_e = item_all_embeddings
 
-        pos_scores = (user_e * pos_e).sum(dim=-1)  # (batch_size,)
-        neg_scores = torch.matmul(user_e, neg_e.transpose(0, 1))  # (batch_size, neg_item_num)
+        scores = torch.matmul(user_e, all_e.transpose(0, 1))  # (batch_size, neg_item_num)
 
-        return pos_scores, neg_scores
+        return scores
