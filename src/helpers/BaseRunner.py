@@ -235,10 +235,10 @@ class BaseRunner(object):
         Evaluate the results for an input dataset.
         :return: result dict (key: metric@k)
         """
-        predictions = self.predict(dataset)
+        predictions = self.interface(dataset)
         return self.evaluate_method(predictions, topks, metrics)
 
-    def predict(self, dataset: BaseModel.Dataset) -> np.ndarray:
+    def interface(self, dataset: BaseModel.Dataset) -> np.ndarray:
         """
         The returned prediction is a 2D-array, each row corresponds to all the candidates,
         and the ground-truth item poses the first.
@@ -247,7 +247,7 @@ class BaseRunner(object):
         """
         model = dataset.model
         model.eval()
-        predictions, pos_scores_list, neg_scores_list = [], [], []
+        predictions, target_scores_list, scores_list = [], [], []
 
         dl = DataLoader(dataset,
                         batch_size=self.eval_batch_size,
@@ -257,12 +257,13 @@ class BaseRunner(object):
                         pin_memory=self.pin_memory)
         for batch in tqdm(dl, leave=False, desc='Predict:', ncols=100, mininterval=1):
             batch = utils.batch_to_gpu(batch, model.device)
-            pos_scores, neg_scores = model.full_predict(batch)
-            pos_scores_list.append(pos_scores)
-            neg_scores_list.append(neg_scores)
+            pos_scores, scores = model.full_predict(batch)
+            target_scores = scores[torch.arange(len(batch['pos_item'])), batch['pos_item']]
+            target_scores_list.append(target_scores)
+            scores_list.append(scores)
 
-        pos_scores = torch.cat(pos_scores_list, dim=0).detach()
-        neg_scores = torch.cat(neg_scores_list, dim=0).detach()
+        pos_scores = torch.cat(target_scores_list, dim=0).detach()
+        neg_scores = torch.cat(scores_list, dim=0).detach()
 
         # Precompute clicked item unions
         clicked_item_unions = {
