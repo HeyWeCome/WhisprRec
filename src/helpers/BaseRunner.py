@@ -29,9 +29,9 @@ class BaseRunner(object):
                             help='Learning rate.')
         parser.add_argument('--l2', type=float, default=0,
                             help='Weight decay in optimizer.')
-        parser.add_argument('--batch_size', type=int, default=2048,
+        parser.add_argument('--batch_size', type=int, default=256,
                             help='Batch size during training.')
-        parser.add_argument('--eval_batch_size', type=int, default=4096,
+        parser.add_argument('--eval_batch_size', type=int, default=256,
                             help='Batch size during testing.')
         parser.add_argument('--optimizer', type=str, default='Adam',
                             help='optimizer: SGD, Adam, Adagrad, Adadelta')
@@ -245,7 +245,8 @@ class BaseRunner(object):
         Example: ground-truth items: [1, 2], 2 negative items for each instance: [[3,4], [5,6]]
                  predictions like: [[1,3,4], [2,5,6]]
         """
-        dataset.model.eval()
+        model = dataset.model
+        model.eval()
         predictions, pos_scores_list, neg_scores_list = [], [], []
 
         dl = DataLoader(dataset,
@@ -254,25 +255,29 @@ class BaseRunner(object):
                         num_workers=self.num_workers,
                         collate_fn=dataset.collate_batch,
                         pin_memory=self.pin_memory)
-        for batch in tqdm(dl, leave=False, ncols=100, mininterval=1, desc='Predict'):
-            pos_scores, neg_scores = dataset.model.full_predict(utils.batch_to_gpu(batch, dataset.model.device))
+        for batch in tqdm(dl, leave=False, desc='Predict:', ncols=100, mininterval=1):
+            batch = utils.batch_to_gpu(batch, model.device)
+            pos_scores, neg_scores = model.full_predict(batch)
             pos_scores_list.append(pos_scores)
             neg_scores_list.append(neg_scores)
 
         pos_scores = torch.cat(pos_scores_list, dim=0).detach()
         neg_scores = torch.cat(neg_scores_list, dim=0).detach()
 
-        # mask the score of item, which user have interacted, to -np.inf
+        # Precompute clicked item unions
+        clicked_item_unions = {
+            user_id: dataset.corpus.train_clicked_set[user_id].union(dataset.corpus.residual_clicked_set[user_id])
+            for user_id in dataset.data['user_id']
+        }
+
+        # mask the score of items that users have interacted with, to -np.inf
         if dataset.model.test_all:
             for user_idx, user_id in enumerate(dataset.data['user_id']):
-                clicked_items = dataset.corpus.train_clicked_set[user_id].union(
-                    dataset.corpus.residual_clicked_set[user_id])
+                clicked_items = clicked_item_unions[user_id]
                 neg_scores[user_idx, list(clicked_items)] = -np.inf
 
-        # concat pos_scores and neg_scores. 2-D array.
         predictions = torch.cat([pos_scores.unsqueeze(1), neg_scores], dim=1).cpu().numpy()
         return predictions
-
 
     def print_res(self, dataset: BaseModel.Dataset) -> str:
         """
