@@ -85,10 +85,11 @@ class BaseReader(object):
         test_df = self.data_df['test'][['user_id', 'item_id', 'timestamp']]
 
         self.all_df = pd.concat([train_df, dev_df, test_df])
-        # remove duplicate interactions:
-        self.all_df = self.all_df.drop_duplicates(['user_id', 'item_id'])
+        # Remove duplicate interactions based on 'user_id', 'item_id', and 'timestamp'
+        self.all_df.drop_duplicates(subset=['user_id', 'item_id', 'timestamp'], keep='first', inplace=True)
 
         # Get dataset stats
+        print(self.all_df['user_id'].max(), "*"*50, self.all_df['user_id'].min())
         self.n_users = self.all_df['user_id'].max() + 1
         self.n_items = self.all_df['item_id'].max() + 1
 
@@ -102,7 +103,9 @@ if __name__ == '__main__':
 
     configs['reader']['sep'] = '\t'
     configs['reader']['path'] = '../../data/'
-    configs['reader']['dataset'] = 'ml-1m'
+    configs['reader']['dataset'] = 'food'
+    configs['reader']['sample'] = 'random'
 
     reader = BaseReader(configs)
+    print(reader.n_users)
 
