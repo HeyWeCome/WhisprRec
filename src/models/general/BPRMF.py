@@ -81,14 +81,11 @@ class BPRMF(GeneralModel):
 
     def full_predict(self, feed_dict):
         user = feed_dict['user_id']
-        pos_item = feed_dict['pos_item']
 
         user_e = self.get_user_embedding(user)
-        pos_e = self.get_item_embedding(pos_item)
-        neg_e = self.item_embeddings.weight
+        item_e = self.item_embeddings.weight
 
-        pos_scores = (user_e * pos_e).sum(dim=-1)  # (batch_size,)
         # expand the user embedding to match the shape of neg_items
-        neg_scores = torch.matmul(user_e, neg_e.transpose(0, 1))  # (batch_size, neg_item_num)
+        neg_scores = torch.matmul(user_e, item_e.transpose(0, 1))  # (batch_size, neg_item_num)
 
-        return pos_scores, neg_scores
+        return neg_scores
