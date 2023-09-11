@@ -30,23 +30,23 @@ def count_statics(data_df, dataset):
         "timestamp:float": "timestamp"
     }
     data_df.rename(columns=renamed_columns, inplace=True)
-    # Filter out users with less than 20 occurrences
+    # Filter out users with less than 5 occurrences
     user_counts = data_df['user_id'].value_counts()
-    data_df = data_df[data_df['user_id'].isin(user_counts[user_counts >= 20].index)]
+    data_df = data_df[data_df['user_id'].isin(user_counts[user_counts >= 5].index)]
 
     # Create a mapping of unique user and item IDs to sequential integers
-    user_id_map = {id: i for i, id in enumerate(data_df['user_id'].unique())}
-    item_id_map = {id: i for i, id in enumerate(data_df['item_id'].unique())}
+    user_id_map = {id: i for i, idx in enumerate(data_df['user_id'].unique())}
+    item_id_map = {id: i for i, idx in enumerate(data_df['item_id'].unique())}
     data_df['user_id'] = data_df['user_id'].map(user_id_map)
     data_df['item_id'] = data_df['item_id'].map(item_id_map)
 
     if dataset == 'ml-1m' or dataset == 'ml-100k' or dataset == 'ml-10m':
-        # Filter out interactions with a rating less than 4
-        data_df = data_df.loc[data_df['rating'] >= 4].copy()  # Make a copy of the filtered DataFrame
+        # Filter out interactions with a rating less than 3
+        data_df = data_df.loc[data_df['rating'] >= 3].copy()  # Make a copy of the filtered DataFrame
         data_df.drop(columns=['rating'], inplace=True)
     elif dataset == "yelp" or dataset == "food":
-        # Filter out interactions with rating less than 4 because dataset is very large.
-        data_df = data_df.loc[data_df['rating'] >= 4].copy()
+        # Filter out interactions with rating less than 3
+        data_df = data_df.loc[data_df['rating'] >= 3].copy()
         data_df.drop(columns=['rating'], inplace=True)
 
     n_users = data_df['user_id'].value_counts().size
