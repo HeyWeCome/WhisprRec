@@ -77,19 +77,11 @@ class BaseModel(nn.Module):
             return len(self.data)
 
         def __getitem__(self, index: int) -> dict:
-            if self.model.buffer and self.phase != 'train':
-                return self.buffer_dict[index]
             return self._get_feed_dict(index)
 
         # 关键！：对于一个单例构建输入数据的方法
         def _get_feed_dict(self, index: int) -> dict:
             pass
-
-        # 初始化后调用
-        def prepare(self):
-            if self.model.buffer and self.phase != 'train':
-                for i in tqdm(range(len(self)), leave=False, desc=('Prepare ' + self.phase)):
-                    self.buffer_dict[i] = self._get_feed_dict(i)
 
         # 只在训练阶段之前调用
         def actions_before_epoch(self):
