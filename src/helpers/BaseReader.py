@@ -89,8 +89,8 @@ class BaseReader(object):
         self.all_df.drop_duplicates(subset=['user_id', 'item_id', 'timestamp'], keep='first', inplace=True)
 
         # Get dataset stats
-        self.n_users = self.all_df['user_id'].max()
-        self.n_items = self.all_df['item_id'].max()
+        self.n_users = self.all_df['user_id'].max() + 1
+        self.n_items = self.all_df['item_id'].max() + 1
 
 
 if __name__ == '__main__':
