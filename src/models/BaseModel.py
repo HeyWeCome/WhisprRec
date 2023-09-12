@@ -19,11 +19,19 @@ class BaseModel(nn.Module):
     reader, runner = None, None  # 根据不同的模型选择不同的helper
     extra_log_args = []  # 需要额外记录的参数
 
-    def __init__(self, corpus: BaseReader, configs):
+    @staticmethod
+    def parse_model_args(parser):
+        parser.add_argument('--model_path', type=str, default='',
+                            help='Model save path.')
+        parser.add_argument('--buffer', type=int, default=1,
+                            help='Whether to buffer feed dicts for dev/test')
+        return parser
+
+    def __init__(self, args, corpus: BaseReader):
         super(BaseModel, self).__init__()
-        self.device = configs['device']
-        self.model_path = configs['model_path']
-        self.buffer = configs['reader']['buffer']
+        self.device = args.device
+        self.model_path = args.model_path
+        self.buffer = args.buffer
         self.optimizer = None
         self.check_list = list()  # observe tensors in check_list every check_epoch
 
@@ -123,25 +131,25 @@ class BaseModel(nn.Module):
 
 
 class GeneralModel(BaseModel):
-    def __init__(self, corpus, configs):
-        super().__init__(corpus, configs)
+    reader, runner = 'BaseReader', 'BaseRunner'
+
+    @staticmethod
+    def parse_model_args(parser):
+        parser.add_argument('--num_neg', type=int, default=1,
+                            help='The number of negative items during training.')
+        parser.add_argument('--test_all', type=int, default=1,
+                            help='Whether testing on all the items.')
+        return BaseModel.parse_model_args(parser)
+
+    def __init__(self, args, corpus):
+        super().__init__(args, corpus)
         self.user_num = int(corpus.n_users)
         self.item_num = int(corpus.n_items)
-        self.num_neg = configs['runner']['num_neg']
-        self.test_all = configs['runner']['test_all']
+        self.num_neg = args.num_neg
+        self.test_all = args.test_all
 
     def calculate_loss(self, feed_dict):
-        user = feed_dict['user_id']
-        pos_item = feed_dict['pos_item']
-        neg_item = feed_dict['neg_items']
-
-        user_e, pos_e = self.forward(user, pos_item)
-        neg_e = self.get_item_embedding(neg_item)
-        pos_item_score = torch.mul(user_e, pos_e).sum(dim=1)
-        neg_item_score = torch.mul(user_e, neg_e).sum(dim=1)
-        bpr_loss = BPRLoss()
-        loss = bpr_loss(pos_item_score, neg_item_score)
-        return loss
+        pass
 
     class Dataset(BaseModel.Dataset):
         def _get_feed_dict(self, index):
@@ -177,15 +185,9 @@ class SequentialModel(GeneralModel):
     # reader = 'BaseReader'
     reader = 'SeqReader'
 
-    @staticmethod
-    def parse_model_args(parser):
-        parser.add_argument('--history_max', type=int, default=20,
-                            help='Maximum length of history.')
-        return GeneralModel.parse_model_args(parser)
-
-    def __init__(self, args, corpus):
-        super().__init__(args, corpus)
-        self.history_max = args.history_max
+    def __init__(self, corpus, configs):
+        super().__init__(corpus, configs)
+        self.history_max = configs['runner']['history_max']
 
     class Dataset(GeneralModel.Dataset):
         def __init__(self, model, corpus, phase):

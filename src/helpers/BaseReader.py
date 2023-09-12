@@ -13,27 +13,19 @@ from utils import utils
 
 class BaseReader(object):
     @staticmethod
-    def parse_reader_args(parser, configs):
+    def parse_reader_args(parser):
         parser.add_argument('--path', type=str, default='../data/', help='Input data dir.')
         parser.add_argument('--dataset', type=str, default='ml-100k', help='Choose a dataset.')
         parser.add_argument('--sep', type=str, default='\t', help='sep of csv file.')
         parser.add_argument('--sample', type=str, default='random', help='random or leave one out')
 
-        args, extras = parser.parse_known_args()
-
-        # Update the configs dictionary with the parsed arguments
-        configs['reader']['path'] = args.path
-        configs['reader']['dataset'] = args.dataset
-        configs['reader']['sep'] = args.sep
-        configs['reader']['sample'] = args.sample
-
         return parser
 
-    def __init__(self, configs):
-        self.sep = configs['reader']['sep']
-        self.prefix = configs['reader']['path']
-        self.dataset = configs['reader']['dataset']
-        self.sample = configs['reader']['sample']
+    def __init__(self, args):
+        self.sep = args.sep
+        self.prefix = args.path
+        self.dataset = args.dataset
+        self.sample = args.sample
 
         # check whether train, val and test dataset have been generated
         train_df, dev_df, test_df = self._check_file()
@@ -93,18 +85,18 @@ class BaseReader(object):
         self.n_items = self.all_df['item_id'].max() + 1
 
 
-if __name__ == '__main__':
-    # init overall configs
-    configs = dict()
-    configs.update({'model': {}})
-    configs.update({'runner': {}})
-    configs.update({'reader': {}})
-
-    configs['reader']['sep'] = '\t'
-    configs['reader']['path'] = '../../data/'
-    configs['reader']['dataset'] = 'food'
-    configs['reader']['sample'] = 'random'
-
-    reader = BaseReader(configs)
-    print(reader.n_users)
+# if __name__ == '__main__':
+#     # init overall configs
+#     configs = dict()
+#     configs.update({'model': {}})
+#     configs.update({'runner': {}})
+#     configs.update({'reader': {}})
+#
+#     configs['reader']['sep'] = '\t'
+#     configs['reader']['path'] = '../../data/'
+#     configs['reader']['dataset'] = 'food'
+#     configs['reader']['sample'] = 'random'
+#
+#     reader = BaseReader(configs)
+#     print(reader.n_users)
 

@@ -18,45 +18,40 @@ from models.BaseModel import GeneralModel
 from utils.augmentor import node_dropout, edge_dropout
 
 class SGL(GeneralModel):
+    reader = 'BaseReader'
+    runner = 'BaseRunner'
+    extra_log_args = ['embedding_size', 'gcn_layers', 'reg_weight', 'type', 'ssl_tau', 'ssl_weight', 'drop_ratio']
+
     @staticmethod
-    def parse_model_args(parser, configs):
+    def parse_model_args(parser):
         parser.add_argument('--embedding_size', type=int, default=64,
                             help='Size of embedding vectors.')
-        parser.add_argument('--gcn_layers', type=int, default=3,
+        parser.add_argument('--gcn_layers', type=int, default=2,
                             help='Number of SGL layers.')
         parser.add_argument('--type', type=str, default='ED',
                             help="The type to generate views. Range in ['ED', 'ND', 'RW'].")
         parser.add_argument('--reg_weight', type=float, default=1e-05,
                             help='The L2 regularization weight.')
-        parser.add_argument('--ssl_tau', type=float, default=0.5,
+        parser.add_argument('--ssl_tau', type=float, default=0.1,
                             help='The temperature in softmax.')
         parser.add_argument('--ssl_weight', type=float, default=0.05,
                             help='The hyperparameter to control the strengths of SSL.')
         parser.add_argument('--drop_ratio', type=float, default=0.1,
                             help='The dropout ratio.')
 
-        args, extras = parser.parse_known_args()
-        # Update the configs dictionary with the parsed arguments
-        configs['model']['embedding_size'] = args.embedding_size
-        configs['model']['gcn_layers'] = args.gcn_layers
-        configs['model']['reg_weight'] = args.reg_weight
-        configs['model']['type'] = args.type
-        configs['model']['ssl_weight'] = args.ssl_weight
-        configs['model']['ssl_tau'] = args.ssl_tau
-        configs['model']['drop_ratio'] = args.drop_ratio
-        return parser
+        return GeneralModel.parse_model_args(parser)
 
-    def __init__(self, corpus, configs):
-        super().__init__(corpus, configs)
-        self.emb_size = configs['model']['embedding_size']
-        self.gcn_layers = int(configs['model']['gcn_layers'])
+    def __init__(self, args, corpus):
+        super().__init__(args, corpus)
         self.n_users = corpus.n_users
         self.n_items = corpus.n_items
-        self.reg_weight = float(configs['model']['reg_weight'])
-        self.type = str(configs['model']['type'])
-        self.ssl_weight = configs['model']['ssl_weight']
-        self.ssl_tau = configs['model']['ssl_tau']
-        self.drop_ratio = configs['model']['drop_ratio']
+        self.emb_size = args.embedding_size
+        self.gcn_layers = args.gcn_layers
+        self.reg_weight = float(args.reg_weight)
+        self.type = str(args.type)
+        self.ssl_weight = args.ssl_weight
+        self.ssl_tau = args.ssl_tau
+        self.drop_ratio = args.drop_ratio
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.emb_size)
