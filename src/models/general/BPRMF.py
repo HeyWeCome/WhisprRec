@@ -15,7 +15,6 @@ from utils.loss import BPRLoss
 
 
 class BPRMF(GeneralModel):
-
     @staticmethod
     def parse_model_args(parser, configs):
         parser.add_argument('--embedding_size', type=int, default=64,
