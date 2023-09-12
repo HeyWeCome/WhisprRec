@@ -10,7 +10,7 @@ from time import time
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from typing import Dict, List
-from utils import utils
+from utils import utils, metric
 from models.BaseModel import BaseModel
 
 
@@ -84,34 +84,29 @@ class BaseRunner(object):
         recall = hit.
         """
         evaluations = dict()
-        # The sort_idx contains the index values of the array values in descending order.
+
+        # Sort predictions and find ranks
         sort_idx = (-predictions).argsort(axis=1)
-        gt_rank = np.argwhere(sort_idx == 0)[:, 1] + 1  # find the rank info of ground_truth
-        for k in topk:
-            hit = (gt_rank <= k)
+        gt_rank = np.argwhere(sort_idx == 0)[:, 1] + 1
+
+        # Create a mask of hits within topk ranks for each value in topk
+        hits = np.asarray([gt_rank <= k for k in topk])
+        for i, k in enumerate(topk):
+            hit = hits[i]
             for metric in metrics:
-                key = '{}@{}'.format(metric, k)
+                key = f'{metric}@{k}'
                 if metric.lower() == 'hr':
                     evaluations[key] = hit.mean()
                 elif metric.lower() == 'ndcg':
-                    # compute NDCG@k
-                    ndcg = (1 / np.log2(gt_rank + 1)) * hit
-                    evaluations[key] = ndcg.mean()
-                elif metric.lower() == 'recall':
-                    # compute recall@k
-                    # Since, there's only 1 relevant item for each row (implicit feedback)
-                    # hit rate at rank K is equivalent to recall at rank K
+                    denominator = np.log2(np.clip(gt_rank, 1, k) + 1)
+                    evaluations[key] = np.mean(hit / denominator)
+                elif metric.lower() == 'recall' or metric.lower() == 'mrr':
                     evaluations[key] = hit.mean()
-                elif metric.lower() == 'mrr':
-                    # compute MRR
-                    reciprocal_rank = 1 / gt_rank
-                    evaluations[key] = reciprocal_rank.mean()
                 elif metric.lower() == 'precision':
-                    # compute Precision@k
-                    precision = hit.sum() / (len(hit) * k)
-                    evaluations[key] = precision
+                    evaluations[key] = hit.sum() / (hit.shape[0] * k)  # hit.shape[0] is equivalent to len(hit)
                 else:
-                    raise ValueError('Undefined evaluation metric: {}.'.format(metric))
+                    raise ValueError(f'Undefined evaluation metric: {metric}.')
+
         return evaluations
 
     def __init__(self, configs):
@@ -262,8 +257,8 @@ class BaseRunner(object):
             target_scores_list.append(target_scores)
             scores_list.append(scores)
 
-        pos_scores = torch.cat(target_scores_list, dim=0).detach()
-        neg_scores = torch.cat(scores_list, dim=0).detach()
+        target_scores = torch.cat(target_scores_list, dim=0).detach()
+        scores = torch.cat(scores_list, dim=0).detach()
 
         # Precompute clicked item unions
         clicked_item_unions = {
@@ -275,9 +270,9 @@ class BaseRunner(object):
         if dataset.model.test_all:
             for user_idx, user_id in enumerate(dataset.data['user_id']):
                 clicked_items = clicked_item_unions[user_id]
-                neg_scores[user_idx, list(clicked_items)] = -np.inf
+                scores[user_idx, list(clicked_items)] = -np.inf
 
-        predictions = torch.cat([pos_scores.unsqueeze(1), neg_scores], dim=1).cpu().numpy()
+        predictions = torch.cat([target_scores.unsqueeze(1), scores], dim=1).cpu().numpy()
         return predictions
 
     def print_res(self, dataset: BaseModel.Dataset) -> str:
