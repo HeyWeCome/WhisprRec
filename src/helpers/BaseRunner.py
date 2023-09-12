@@ -29,9 +29,9 @@ class BaseRunner(object):
                             help='Learning rate.')
         parser.add_argument('--l2', type=float, default=0,
                             help='Weight decay in optimizer.')
-        parser.add_argument('--batch_size', type=int, default=256,
+        parser.add_argument('--batch_size', type=int, default=2048,
                             help='Batch size during training.')
-        parser.add_argument('--eval_batch_size', type=int, default=256,
+        parser.add_argument('--eval_batch_size', type=int, default=2048,
                             help='Batch size during testing.')
         parser.add_argument('--optimizer', type=str, default='Adam',
                             help='optimizer: SGD, Adam, Adagrad, Adadelta')
