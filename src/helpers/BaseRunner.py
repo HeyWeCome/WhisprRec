@@ -98,9 +98,8 @@ class BaseRunner(object):
                 if metric.lower() == 'hr':
                     evaluations[key] = hit.mean()
                 elif metric.lower() == 'ndcg':
-                    denominator = np.log2(np.clip(gt_rank, 1, k) + 1)
-                    evaluations[key] = np.mean(hit / denominator)
-                elif metric.lower() == 'recall' or metric.lower() == 'mrr':
+                    evaluations[key] = np.mean((hit / np.log2(gt_rank + 1)))
+                elif metric.lower() == 'recall':
                     evaluations[key] = hit.mean()
                 elif metric.lower() == 'precision':
                     evaluations[key] = hit.sum() / (hit.shape[0] * k)  # hit.shape[0] is equivalent to len(hit)
