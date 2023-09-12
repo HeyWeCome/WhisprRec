@@ -98,18 +98,13 @@ class BUIR(GeneralModel):
 
     def full_predict(self, feed_dict):
         user = feed_dict['user_id']
-        pos_item = feed_dict['pos_item']
 
         user_e = self.user_online(user)
-        item_e = self.item_online(pos_item)
         all_item_e = self.item_online.weight
-
-        pos_scores = ((self.predictor(item_e) * user_e)).sum(dim=-1) \
-                     + ((self.predictor(user_e) * item_e)).sum(dim=-1)   # (batch_size,)
 
         # expand the user embedding to match the shape of neg_items
         user_predictor = self.predictor(user_e)  # Apply the linear layer to user_e
         # Apply the linear layer to item_online.weight
         item_weights = self.predictor(self.item_online.weight).transpose(0, 1)
         all_scores = torch.matmul(user_e, item_weights) + torch.matmul(user_predictor, all_item_e.transpose(0, 1))
-        return pos_scores, all_scores
+        return all_scores
