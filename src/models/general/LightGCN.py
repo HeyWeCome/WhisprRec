@@ -18,8 +18,12 @@ from utils.loss import BPRLoss, EmbLoss
 
 
 class LightGCN(GeneralModel):
+    reader = 'BaseReader'
+    runner = 'BaseRunner'
+    extra_log_args = ['embedding_size', 'gcn_layers', 'reg_weight']
+
     @staticmethod
-    def parse_model_args(parser, configs):
+    def parse_model_args(parser):
         parser.add_argument('--embedding_size', type=int, default=64,
                             help='Size of embedding vectors.')
         parser.add_argument('--gcn_layers', type=int, default=2,
@@ -27,20 +31,15 @@ class LightGCN(GeneralModel):
         parser.add_argument('--reg_weight', type=float, default=1e-05,
                             help='The L2 regularization weight.')
 
-        args, extras = parser.parse_known_args()
-        # Update the configs dictionary with the parsed arguments
-        configs['model']['embedding_size'] = args.embedding_size
-        configs['model']['gcn_layers'] = args.gcn_layers
-        configs['model']['reg_weight'] = args.reg_weight
-        return parser
+        return GeneralModel.parse_model_args(parser)
 
-    def __init__(self, corpus, configs):
-        super().__init__(corpus, configs)
-        self.emb_size = configs['model']['embedding_size']
-        self.gcn_layers = configs['model']['gcn_layers']
+    def __init__(self, args, corpus):
+        super().__init__(args, corpus)
+        self.emb_size = args.embedding_size
+        self.gcn_layers = args.gcn_layers
         self.n_users = corpus.n_users
         self.n_items = corpus.n_items
-        self.reg_weight = float(configs['model']['reg_weight'])
+        self.reg_weight = float(args.reg_weight)
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.emb_size)

@@ -15,20 +15,21 @@ from utils.loss import BPRLoss
 
 
 class BPRMF(GeneralModel):
+    reader = 'BaseReader'
+    runner = 'BaseRunner'
+    extra_log_args = ['embedding_size']
+
     @staticmethod
-    def parse_model_args(parser, configs):
+    def parse_model_args(parser):
         parser.add_argument('--embedding_size', type=int, default=64,
                             help='Size of embedding vectors.')
-        args, extras = parser.parse_known_args()
-        # Update the configs dictionary with the parsed arguments
-        configs['model']['embedding_size'] = args.embedding_size
-        return parser
+        return GeneralModel.parse_model_args(parser)
 
-    def __init__(self, corpus, configs):
-        super().__init__(corpus, configs)
+    def __init__(self, args, corpus):
+        super().__init__(args, corpus)
 
         # load parameter info
-        self.emb_size = configs['model']['embedding_size']
+        self.emb_size = args.embedding_size
 
         # define layers and loss
         self.user_embeddings = nn.Embedding(self.user_num, self.emb_size)

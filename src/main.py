@@ -8,9 +8,6 @@ import torch
 import yaml
 
 from helpers import *
-from helpers.BaseRunner import BaseRunner
-from helpers.BUIRRunner import BUIRRunner
-from helpers.BaseReader import BaseReader
 # from models.developing import *
 # from models.graph import *
 from models.general import *
@@ -18,7 +15,7 @@ from models.sequential import *
 from utils import utils
 
 
-def parse_global_args(parser, configs):
+def parse_global_args(parser):
     parser.add_argument('--gpu', type=str, default='0',
                         help='Set CUDA_VISIBLE_DEVICES, default for CPU only')
     parser.add_argument('--verbose', type=int, default=logging.INFO,
@@ -33,60 +30,53 @@ def parse_global_args(parser, configs):
                         help='To train the model or not.')
     parser.add_argument('--regenerate', type=int, default=1,
                         help='Whether to regenerate intermediate files')
-
-    args, extras = parser.parse_known_args()
-
-    # Update the configs dictionary with the parsed arguments
-    configs['gpu'] = args.gpu
-    configs['verbose'] = args.verbose
-    configs['log_file'] = args.log_file
-    configs['random_seed'] = args.random_seed
-    configs['load'] = args.load
-    configs['train'] = args.train
-    configs['regenerate'] = args.regenerate
-
     return parser
 
 
-def main(configs):
+def main():
+    logging.info('-' * 45 + ' BEGIN: ' + utils.get_time() + ' ' + '-' * 45)
+    exclude = ['check_epoch', 'log_file', 'model_path', 'path', 'pin_memory', 'load',
+               'regenerate', 'sep', 'train', 'verbose', 'metric', 'test_epoch', 'buffer']
+    logging.info(utils.format_arg_str(args, exclude_lst=exclude))
+
     # Random seed
     # Fix the problem caused by numpy
-    utils.init_seed(configs['random_seed'])
+    utils.init_seed(args.random_seed)
 
     # GPU
-    os.environ['CUDA_VISIBLE_DEVICES'] = configs['gpu']
-    configs['device'] = torch.device('cpu')
-    if configs['gpu'] != '' and torch.cuda.is_available():
-        configs['device'] = torch.device('cuda')
-    logging.info('Device: {}'.format(configs['device']))
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+    args.device = torch.device('cpu')
+    if args.gpu != '' and torch.cuda.is_available():
+        args.device = torch.device('cuda')
+    logging.info('Device: {}'.format(args.device))
 
     # Read data
-    corpus_path = os.path.join(configs['reader']['path'],
-                               configs['reader']['dataset'],
-                               configs['reader']['name'] + '.pkl')
-    if not configs['regenerate'] and os.path.exists(corpus_path):
+    corpus_path = os.path.join(args.path,
+                               args.dataset,
+                               reader_name + '.pkl')
+    if not args.regenerate and os.path.exists(corpus_path):
         logging.info('Load corpus from {}'.format(corpus_path))
         corpus = pickle.load(open(corpus_path, 'rb'))
     else:
-        corpus = reader_name(configs)
+        corpus = reader_class(args)
         logging.info('Save corpus to {}'.format(corpus_path))
         pickle.dump(corpus, open(corpus_path, 'wb'))
 
     # Define model
-    model = model_name(corpus, configs).to(configs['device'])
+    model = model_class(args, corpus).to(args.device)
     logging.info('#params: {}'.format(model.count_variables()))
     logging.info(model)
 
     # Run model
     data_dict = dict()
     for phase in ['train', 'dev', 'test']:
-        data_dict[phase] = model_name.Dataset(model, corpus, phase)
+        data_dict[phase] = model_class.Dataset(model, corpus, phase)
         # data_dict[phase].prepare()
-    runner = runner_name(configs)
+    runner = runner_class(args)
     # logging.info('Test Before Training: ' + runner.print_res(data_dict['test']))
-    if configs['load'] > 0:
+    if args.load > 0:
         model.load_model()
-    if configs['train'] > 0:
+    if args.train > 0:
         runner.train(data_dict)
     eval_res = runner.print_res(data_dict['test'])
     logging.info(os.linesep + 'Test After Training: ' + eval_res)
@@ -111,98 +101,39 @@ def main(configs):
 #     rec_df['rec_items'] = rec_items
 #     rec_df.to_csv(result_path, sep=args.sep, index=False)
 
-
-def parse_config(config):
-    """
-    The core configuration file for the entire project.
-    Load order: yaml in config -> parser.
-
-    Args:
-        config: the collection of all configuration files.
-
-    Returns:
-
-    """
-    # First: Load the overall config.
-    with open('config/overall.yml', encoding='utf-8') as overall_file:
-        overall_data = overall_file.read()
-        overall_config = yaml.safe_load(overall_data)
-        config.update(overall_config)
-
-    # Second: Load the config of model.
-    model_config_path = './config/model/{}.yml'.format(configs['model']['name'])
-    if not os.path.exists(model_config_path):
-        raise Exception("Please create the yaml file for your model first.")
-
-    with open(model_config_path, encoding='utf-8') as model_config_file:
-        model_config_data = model_config_file.read()
-        model_config = yaml.safe_load(model_config_data)
-
-    # Third: Load the config of reader and runner
-    # Create a new empty dictionary for merging the contents of the two files
-    merged_data = {}
-    # Add the contents of the first file to the new dictionary
-    merged_data.update(config)
-    # Add the contents of the second file to the new dictionary, keeping the contents of the first file
-    if model_config:
-        for key, value in model_config.items():
-            if key in merged_data:
-                # If the value exists, update it.
-                if value:
-                    merged_data[key].update(value)
-            else:
-                merged_data[key] = value
-    config.update(merged_data)
-
-
 if __name__ == '__main__':
     init_parser = argparse.ArgumentParser(description='Model')
     init_parser.add_argument('--model_name', type=str, default='BPRMF', help='Choose a model to run.')
+    init_parser.add_argument('--reader_name', type=str, default=None, help='Choose a reader object.')
+    init_parser.add_argument('--runner_name', type=str, default=None, help='Choose a runner object.')
     init_args, init_extras = init_parser.parse_known_args()
-
-    # init overall configs
-    configs = dict()
-    configs.update({'model': {}})
-    configs.update({'runner': {}})
-    configs.update({'reader': {}})
-
-    # model name
-    configs['model']['name'] = init_args.model_name
-
-    # load the overall config file
-    parse_config(configs)
-
-    # Dynamic create reader and runner
-    model_name = eval('{0}.{0}'.format(init_args.model_name))
-    reader_name = eval('{0}'.format(configs['reader']['name']))  # model chooses the reader
-    runner_name = eval('{0}'.format(configs['runner']['name']))  # model chooses the runner
+    model_class = eval('{0}.{0}'.format(init_args.model_name))
+    reader_name = model_class.reader if init_args.reader_name is None else init_args.reader_name
+    reader_class = eval('{0}.{0}'.format(reader_name))
+    runner_name = model_class.runner if init_args.runner_name is None else init_args.runner_name
+    runner_class = eval('{0}.{0}'.format(runner_name))
 
     # Args
     parser = argparse.ArgumentParser(description='')
-    parser = parse_global_args(parser, configs)
-    parser = reader_name.parse_reader_args(parser, configs)
-    parser = runner_name.parse_runner_args(parser, configs)
-    parser = model_name.parse_model_args(parser, configs)
+    parser = parse_global_args(parser)
+    parser = reader_class.parse_reader_args(parser)
+    parser = runner_class.parse_runner_args(parser)
+    parser = model_class.parse_model_args(parser)
+    args, extras = parser.parse_known_args()
 
-    log_args = [configs['model']['name'],
-                configs['reader']['dataset'],
-                'seed='+str(configs['random_seed']),
-                'lr='+str(configs['runner']['lr']),
-                'l2='+str(configs['runner']['l2']),
-                'batch_size='+str(configs['runner']['batch_size'])]
+    # Logging configuration
+    log_args = [init_args.model_name, args.dataset, str(args.random_seed)]
+    for arg in ['lr', 'l2'] + model_class.extra_log_args:
+        log_args.append(arg + '=' + str(eval('args.' + arg)))
     log_file_name = '__'.join(log_args).replace(' ', '__')
-    if configs['log_file'] == '':
-        configs['log_file'] = '../log/{}/{}.txt'.format(configs['model']['name'], log_file_name)
-    if configs['model_path'] == '':
-        configs['model_path'] = '../model/{}/{}.pt'.format(configs['model']['name'], log_file_name)
+    if args.log_file == '':
+        args.log_file = '../log/{}/{}.txt'.format(init_args.model_name, log_file_name)
+    if args.model_path == '':
+        args.model_path = '../model/{}/{}.pt'.format(init_args.model_name, log_file_name)
 
-    utils.check_dir(configs['log_file'])
-    logging.basicConfig(filename=configs['log_file'], level=configs['verbose'])
+    utils.check_dir(args.log_file)
+    logging.basicConfig(filename=args.log_file, level=args.verbose)
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     logging.info(init_args)
 
-    logging.info('-' * 45 + ' BEGIN: ' + utils.get_time() + ' ' + '-' * 45)
-    yaml_str = yaml.dump(configs)
-    logging.info(yaml_str)
-
-    main(configs)
+    main()

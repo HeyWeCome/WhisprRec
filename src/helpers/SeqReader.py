@@ -7,8 +7,9 @@ from helpers.BaseReader import BaseReader
 
 
 class SeqReader(BaseReader):
-    def __init__(self, args):
-        super().__init__(args)
+    def __init__(self, configs):
+        super().__init__(configs)
+        self.sample = 'leave_one_out'
         self._append_user_history_info()
 
     def _append_user_history_info(self):
@@ -40,7 +41,7 @@ class SeqReader(BaseReader):
         for key in ['train', 'dev', 'test']:
             self.data_df[key] = pd.merge(
                 left=self.data_df[key], right=sorted_df, how='left',
-                on=['user_id', 'item_id', 'time'])
+                on=['user_id', 'item_id', 'timestamp'])
 
         # Clean up by deleting the sorted DataFrame.
         del sorted_df
@@ -56,5 +57,6 @@ if __name__ == '__main__':
     configs['reader']['sep'] = '\t'
     configs['reader']['path'] = '../../data/'
     configs['reader']['dataset'] = 'ml-100k'
+    configs['reader']['sample'] = 'random'
 
     reader = SeqReader(configs)

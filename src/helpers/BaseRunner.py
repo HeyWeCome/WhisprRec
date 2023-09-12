@@ -16,7 +16,7 @@ from models.BaseModel import BaseModel
 
 class BaseRunner(object):
     @staticmethod
-    def parse_runner_args(parser, configs):
+    def parse_runner_args(parser):
         parser.add_argument('--epoch', type=int, default=200,
                             help='Number of epochs.')
         parser.add_argument('--check_epoch', type=int, default=1,
@@ -43,23 +43,6 @@ class BaseRunner(object):
                             help='The number of items recommended to each user.')
         parser.add_argument('--metric', type=str, default='NDCG, HR',
                             help='metrics: NDCG, RECALL')
-
-        args, extras = parser.parse_known_args()
-
-        # Update the configs dictionary with the parsed arguments
-        configs['runner']['epoch'] = args.epoch
-        configs['runner']['check_epoch'] = args.check_epoch
-        configs['runner']['test_epoch'] = args.test_epoch
-        configs['runner']['early_stop'] = args.early_stop
-        configs['runner']['lr'] = args.lr
-        configs['runner']['l2'] = args.l2
-        configs['runner']['batch_size'] = args.batch_size
-        configs['runner']['eval_batch_size'] = args.eval_batch_size
-        configs['runner']['optimizer'] = args.optimizer
-        configs['runner']['num_workers'] = args.num_workers
-        configs['runner']['pin_memory'] = args.pin_memory
-        configs['runner']['topk'] = args.topk
-        configs['runner']['metric'] = args.metric
 
         return parser
 
@@ -108,20 +91,20 @@ class BaseRunner(object):
 
         return evaluations
 
-    def __init__(self, configs):
-        self.epoch = configs['runner']['epoch']
-        self.check_epoch = configs['runner']['check_epoch']
-        self.test_epoch = configs['runner']['test_epoch']
-        self.early_stop = configs['runner']['early_stop']
-        self.learning_rate = float(configs['runner']['lr'])
-        self.batch_size = configs['runner']['batch_size']
-        self.eval_batch_size = configs['runner']['eval_batch_size']
-        self.l2 = configs['runner']['l2']
-        self.optimizer_name = configs['runner']['optimizer']
-        self.num_workers = configs['runner']['num_workers']
-        self.pin_memory = configs['runner']['pin_memory']
-        self.topk = [int(x) for x in configs['runner']['topk'].split(',')]
-        self.metrics = [m.strip().upper() for m in configs['runner']['metric'].split(',')]
+    def __init__(self, args):
+        self.epoch = args.epoch
+        self.check_epoch = args.check_epoch
+        self.test_epoch = args.test_epoch
+        self.early_stop = args.early_stop
+        self.learning_rate = float(args.lr)
+        self.batch_size = args.batch_size
+        self.eval_batch_size = args.eval_batch_size
+        self.l2 = args.l2
+        self.optimizer_name = args.optimizer
+        self.num_workers = args.num_workers
+        self.pin_memory = args.pin_memory
+        self.topk = [int(x) for x in args.topk.split(',')]
+        self.metrics = [m.strip().upper() for m in args.metric.split(',')]
         self.main_metric = '{}@{}'.format(self.metrics[0], self.topk[0])  # early stop based on main_metric
 
         self.time = None  # will store [start_time, last_step_time]
