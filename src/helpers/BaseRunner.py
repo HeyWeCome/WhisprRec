@@ -257,8 +257,8 @@ class BaseRunner(object):
             target_scores_list.append(target_scores)
             scores_list.append(scores)
 
-        target_scores = torch.cat(target_scores_list, dim=0).detach()
-        scores = torch.cat(scores_list, dim=0).detach()
+        target_scores = torch.cat(target_scores_list, dim=0).cpu().detach().numpy()
+        scores = torch.cat(scores_list, dim=0).cpu().detach().numpy()
 
         # Precompute clicked item unions
         clicked_item_unions = {
@@ -272,7 +272,7 @@ class BaseRunner(object):
                 clicked_items = clicked_item_unions[user_id]
                 scores[user_idx, list(clicked_items)] = -np.inf
 
-        predictions = torch.cat([target_scores.unsqueeze(1), scores], dim=1).cpu().numpy()
+        predictions = np.concatenate([target_scores[:, np.newaxis], scores], axis=1)
         return predictions
 
     def print_res(self, dataset: BaseModel.Dataset) -> str:
