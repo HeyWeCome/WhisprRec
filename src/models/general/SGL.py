@@ -30,7 +30,7 @@ class SGL(GeneralModel):
                             help='Number of SGL layers.')
         parser.add_argument('--type', type=str, default='ED',
                             help="The type to generate views. Range in ['ED', 'ND', 'RW'].")
-        parser.add_argument('--reg_weight', type=float, default=1e-05,
+        parser.add_argument('--reg_weight', type=float, default=1e-4,
                             help='The L2 regularization weight.')
         parser.add_argument('--ssl_tau', type=float, default=0.1,
                             help='The temperature in softmax.')
