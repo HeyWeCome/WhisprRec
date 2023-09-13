@@ -65,9 +65,6 @@ class BaseModel(nn.Module):
     def actions_after_train(self):  # e.g., save selected parameters
         pass
 
-    """
-    定义数据集类
-    """
     class Dataset(BaseDataset):
         def __init__(self, model, corpus, phase: str):
             self.model = model  # Model
@@ -182,26 +179,41 @@ class GeneralModel(BaseModel):
 
 # 序列模型的Model
 class SequentialModel(GeneralModel):
-    # reader = 'BaseReader'
     reader = 'SeqReader'
 
-    def __init__(self, corpus, configs):
-        super().__init__(corpus, configs)
-        self.history_max = configs['runner']['history_max']
+    @staticmethod
+    def parse_model_args(parser):
+        parser.add_argument('--history_max', type=int, default=20,
+                            help='Maximum length of history.')
+        return GeneralModel.parse_model_args(parser)
+
+    def __init__(self, args, corpus):
+        super().__init__(args, corpus)
+        self.history_max = args.history_max
 
     class Dataset(GeneralModel.Dataset):
         def __init__(self, model, corpus, phase):
             super().__init__(model, corpus, phase)
-            idx_select = np.array(self.data['position']) > 0  # history length must be non-zero
+            # filter out the data, whose length is not greater than 0.
+            idx_select = np.array(self.data['position']) > 0
             for key in self.data:
                 self.data[key] = np.array(self.data[key])[idx_select]
 
         def _get_feed_dict(self, index):
             feed_dict = super()._get_feed_dict(index)
+
             pos = self.data['position'][index]
             user_seq = self.corpus.user_his[feed_dict['user_id']][:pos]
             if self.model.history_max > 0:
                 user_seq = user_seq[-self.model.history_max:]
+
+            # Extract the last element from user_seq and assign its positive value to another variable
+            target_item = user_seq[-1][0]
+            feed_dict['pos_item'] = target_item
+            # Remove the last element from user_seq
+            user_seq = user_seq[:-1]
+
+
             feed_dict['history_items'] = np.array([x[0] for x in user_seq])
             feed_dict['history_times'] = np.array([x[1] for x in user_seq])
             feed_dict['lengths'] = len(feed_dict['history_items'])
