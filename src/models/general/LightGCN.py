@@ -182,6 +182,6 @@ class LightGCN(GeneralModel):
         user_e = user_all_embeddings[user]
         all_e = item_all_embeddings
 
-        scores = torch.matmul(user_e, all_e.transpose(0, 1))  # (batch_size, neg_item_num)
+        scores = torch.matmul(user_e, all_e.transpose(0, 1))  # (batch_size, item_num)
 
         return scores
