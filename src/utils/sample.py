@@ -70,16 +70,15 @@ def count_statics(data_df, dataset):
     return data_df
 
 
-def leave_one_out_split(data_df, save_path):
+def leave_one_out_split(data_df):
     """
     Splits the input DataFrame into train, dev, and test sets using a leave-one-out strategy.
 
     Args:
         data_df (pd.DataFrame): The input DataFrame containing user interactions.
-        save_path: The path to save train, dev, and test sets
     Returns:
         train_df (pd.DataFrame): Training set.
-        dev_df (pd.DataFrame): Development set.
+        dev_df (pd.DataFrame): dev set.
         test_df (pd.DataFrame): Test set.
     """
     # Store clicked items for each user in a dictionary
@@ -114,13 +113,12 @@ def leave_one_out_split(data_df, save_path):
     return train_df, dev_df, test_df
 
 
-def random_split(data_df, save_path, ratios=[0.8, 0.1, 0.1]):
+def random_split(data_df, ratios=[0.8, 0.1, 0.1]):
     """
     Splits the input DataFrame into train, dev, and test sets randomly.
 
     Args:
         data_df (pd.DataFrame): The input DataFrame containing user interactions.
-        save_path (str): The path to save train, dev and test sets.
         ratios (list): The ratios to split train, dev and test sets. default: [0.8, 0.1, 0.1].
 
     Returns:

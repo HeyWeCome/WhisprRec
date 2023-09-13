@@ -7,9 +7,8 @@ from helpers.BaseReader import BaseReader
 
 
 class SeqReader(BaseReader):
-    def __init__(self, configs):
-        super().__init__(configs)
-        self.sample = 'leave_one_out'
+    def __init__(self, args):
+        super().__init__(args)
         self._append_user_history_info()
 
     def _append_user_history_info(self):
