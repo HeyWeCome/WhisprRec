@@ -85,7 +85,7 @@ class BPRMF(GeneralModel):
         user_e = self.get_user_embedding(user)
         item_e = self.item_embeddings.weight
 
-        # expand the user embedding to match the shape of neg_items
-        neg_scores = torch.matmul(user_e, item_e.transpose(0, 1))  # (batch_size, neg_item_num)
+        # expand the user embedding to match the shape of items
+        scores = torch.matmul(user_e, item_e.transpose(0, 1))  # (batch_size, item_num)
 
-        return neg_scores
+        return scores
