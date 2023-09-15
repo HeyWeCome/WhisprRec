@@ -207,13 +207,6 @@ class SequentialModel(GeneralModel):
             if self.model.history_max > 0:
                 user_seq = user_seq[-self.model.history_max:]
 
-            # Extract the last element from user_seq and assign its positive value to another variable
-            target_item = user_seq[-1][0]
-            feed_dict['pos_item'] = target_item
-            # Remove the last element from user_seq
-            user_seq = user_seq[:-1]
-
-
             feed_dict['history_items'] = np.array([x[0] for x in user_seq])
             feed_dict['history_times'] = np.array([x[1] for x in user_seq])
             feed_dict['lengths'] = len(feed_dict['history_items'])
