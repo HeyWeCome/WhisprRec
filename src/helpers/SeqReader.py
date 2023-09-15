@@ -18,7 +18,7 @@ class SeqReader(BaseReader):
         logging.info('Adding user history information...')
 
         # Sort the DataFrame by time and user ID in ascending order using merge sort.
-        sorted_df = self.all_df.sort_values(by=['timestamp', 'user_id'], kind='mergesort')
+        sorted_df = self.all_df.sort_values(by=['user_id', 'timestamp'], kind='mergesort')
 
         # Initialize a dictionary to store each user's interaction history.
         self.user_his = {}
