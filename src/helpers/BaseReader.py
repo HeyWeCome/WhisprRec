@@ -52,6 +52,7 @@ class BaseReader(object):
         try:
             data_df = pd.read_csv(inter_file_path, sep='\t', header=0)
             data_df = sample.count_statics(data_df, self.dataset)
+            self.all_df = data_df
             if self.sample == 'random':
                 train_df, dev_df, test_df = sample.random_split(data_df)
             else:
@@ -76,9 +77,9 @@ class BaseReader(object):
         dev_df = self.data_df['dev'][['user_id', 'item_id', 'timestamp']]
         test_df = self.data_df['test'][['user_id', 'item_id', 'timestamp']]
 
-        self.all_df = pd.concat([train_df, dev_df, test_df])
-        # Remove duplicate interactions based on 'user_id', 'item_id', and 'timestamp'
-        self.all_df.drop_duplicates(subset=['user_id', 'item_id', 'timestamp'], keep='first', inplace=True)
+        # self.all_df = pd.concat([train_df, dev_df, test_df])
+        # # Remove duplicate interactions based on 'user_id', 'item_id', and 'timestamp'
+        # self.all_df.drop_duplicates(subset=['user_id', 'item_id', 'timestamp'], keep='first', inplace=True)
 
         # Get dataset stats
         self.n_users = self.all_df['user_id'].max() + 1
