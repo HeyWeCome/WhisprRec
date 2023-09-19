@@ -24,6 +24,8 @@ class SASRec(SequentialModel):
         In the author's implementation, the Point-Wise Feed-Forward Network (PFFN) is implemented
         by CNN with 1x1 kernel. In this implementation, we follows the original BERT implementation
         using Fully Connected Layer to implement the PFFN.
+    Run:
+        python main.py --model_name SASRec --sample LS
     """
     reader = 'SeqReader'
     runner = 'BaseRunner'
