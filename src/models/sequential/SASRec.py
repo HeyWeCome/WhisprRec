@@ -73,14 +73,14 @@ class SASRec(SequentialModel):
         batch_size, seq_len = history.shape
 
         valid_his = (history > 0).long()
-        his_vectors = self.item_embedding(history)
 
-        # Position embedding
-        # lengths:  [4, 2, 5]
-        # position: [[4, 3, 2, 1, 0], [2, 1, 0, 0, 0], [5, 4, 3, 2, 1]]
-        position = (lengths[:, None] - self.len_range[None, :seq_len]) * valid_his
-        pos_vectors = self.position_embedding(position)
-        his_vectors = his_vectors + pos_vectors
+        position_ids = torch.arange(
+            history.size(1), dtype=torch.long, device=history.device
+        )
+        position_ids = position_ids.unsqueeze(0).expand_as(history)
+        position_embedding = self.position_embedding(position_ids)
+        his_vectors = self.item_embedding(history)
+        his_vectors = his_vectors + position_embedding
 
         # Self-attention
         causality_mask = np.tril(np.ones((1, 1, seq_len, seq_len), dtype=np.int32))
@@ -100,7 +100,6 @@ class SASRec(SequentialModel):
         neg_item = feed_dict['neg_items']
 
         user_e = self.forward(feed_dict)
-
         pos_e = self.item_embedding(pos_item)
         neg_e = self.item_embedding(neg_item)
 
