@@ -33,12 +33,12 @@ python main.py --model_name BPRMF --emb_size 64 --lr 1e-3 --l2 1e-6 --dataset ml
 ## The Current Model List :owl:
 In ml-100k dataset.
 
-| **Model**    | **HR@10** | **NDCG@10** | **Best hyper-parameters**                                                     | **Description** |
-|--------------|-----------|-------------|-------------------------------------------------------------------------------|-----------------|
-| **BUIR**     | 0.1114    | 0.0626      | lr=5e-4                                                                       | SIGIR'21        |
-| **BPRMF**    | 0.2254    | 0.1085      | lr=1e-3                                                                       | UAI'09          |
-| **LightGCN** | 0.2292    | 0.1174      | lr=2e-3, gcn_layers=2                                                         | SIGIR'20        |
-| **SGL**      | 0.2287    | 0.1187      | lr=2e-3, gcn_layers=2, ssl_tau=0.1, drop_ratio=0.1, type=ED, ssl_weight=0.001 | SIGIR’21        |
-
-
-
+| ****Model****      | ****HR@10**** | ****NDCG@10**** | ****Best hyper-parameters****                                                 | ****Description**** |
+|--------------------|---------------|-----------------|-------------------------------------------------------------------------------|---------------------|
+| ****General****    | ============  | ============    | ============                                                                  | ============        |
+| ****BUIR****       | 0.1114        | 0.0626          | lr=5e-4                                                                       | SIGIR'21            |
+| ****BPRMF****      | 0.2254        | 0.1085          | lr=1e-3                                                                       | UAI'09              |
+| ****LightGCN****   | 0.2292        | 0.1174          | lr=2e-3, gcn_layers=2                                                         | SIGIR'20            |
+| ****SGL****        | 0.2287        | 0.1187          | lr=2e-3, gcn_layers=2, ssl_tau=0.1, drop_ratio=0.1, type=ED, ssl_weight=0.001 | SIGIR’21            |
+| ****Sequential**** | ============  | ============    | ============                                                                  | ============        |
+| ****SASRec****     | 0.3166        | 0.1798          | lr=5e-4, sample=LS, num_layers=1, num_heads=4                                 | ICDM‘18             |
