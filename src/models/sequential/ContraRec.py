@@ -26,7 +26,7 @@ class ContraRec(SequentialModel):
     """
     reader = 'SeqReader'
     runner = 'BaseRunner'
-    extra_log_args = ['gamma', 'num_neg', 'batch_size', 'ccc_temp', 'encoder']
+    extra_log_args = ['gamma', 'num_neg', 'batch_size', 'ccc_temp']
 
     def parse_model_args(parser):
         parser.add_argument('--emb_size', type=int, default=64,
@@ -177,6 +177,8 @@ class ContraLoss(nn.Module):
         anchor_dot_contrast = torch.matmul(contrast_feature, contrast_feature.transpose(0, 1)) / self.temperature
         # We subtract the maximum value for stability during the exponential operation in softmax computation.
         logits_max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
+        # Using .sub_() for inplace operation to reduce memory footprint and speed up computation
+        anchor_dot_contrast.sub_(logits_max)
         logits = anchor_dot_contrast - logits_max.detach()
 
         # Expand the mask matrix to match the dimension of the contrast matrix
